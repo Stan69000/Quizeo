@@ -1,0 +1,390 @@
+/**
+ * MainScreen - Main interface for URL analysis and track selection.
+ * Supports multiple concurrent analyses, each with its own progress/pause/cancel.
+ */
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { open } from '@tauri-apps/plugin-dialog';
+import { TrackInfo, AppConfig, AnalyzeProgressEvent } from '../types';
+import { TrackList } from './TrackList';
+import { Alert } from './Alert';
+import { useDownloadedFiles } from '../hooks/useDownloadedFiles';
+
+interface MainScreenProps {
+  config: AppConfig;
+  onSettingsClick: () => void;
+  onChangeFolder: (newPath: string) => Promise<void>;
+  onAddToQueue: (tracks: TrackInfo[]) => void;
+  onOpenQuiz: () => void;
+  onBack: () => void;
+}
+
+type URLType = 'youtube' | 'deezer' | 'deezer-track';
+
+interface ActiveAnalysis {
+  id: string;
+  url: string;
+  urlType: URLType;
+  progress: AnalyzeProgressEvent | null;
+  paused: boolean;
+}
+
+interface AnalyzeResult {
+  id: string;
+  url: string;
+  urlType: URLType;
+  tracks: TrackInfo[];
+}
+
+let idCounter = 0;
+
+export function MainScreen({
+  config,
+  onSettingsClick,
+  onChangeFolder,
+  onOpenQuiz,
+  onAddToQueue,
+  onBack,
+}: MainScreenProps) {
+  const [urlInput, setUrlInput] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const { isDownloaded, refresh: refreshDownloaded } = useDownloadedFiles(config.download_dir);
+  const [activeAnalyses, setActiveAnalyses] = useState<ActiveAnalysis[]>([]);
+  const [results, setResults] = useState<AnalyzeResult[]>([]);
+  const unlistenRef = useRef<UnlistenFn | null>(null);
+  // Track which analysis ID is the latest Deezer (receives progress events)
+  const latestDeezerIdRef = useRef<string | null>(null);
+
+  // Listen to analyze-progress events - route to the latest Deezer analysis
+  useEffect(() => {
+    const setup = async () => {
+      unlistenRef.current = await listen<AnalyzeProgressEvent>('analyze-progress', (event) => {
+        const targetId = latestDeezerIdRef.current;
+        if (!targetId) return;
+
+        setActiveAnalyses((prev) =>
+          prev.map((a) =>
+            a.id === targetId
+              ? { ...a, progress: event.payload, paused: event.payload.status === 'paused' }
+              : a
+          )
+        );
+      });
+    };
+    setup();
+    return () => { unlistenRef.current?.(); };
+  }, []);
+
+  const detectURLType = (url: string): { type: URLType; url: string } | null => {
+    let trimmedUrl = url.trim();
+    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+      trimmedUrl = 'https://' + trimmedUrl;
+    }
+    if (
+      trimmedUrl.includes('youtube.com') ||
+      trimmedUrl.includes('youtu.be') ||
+      trimmedUrl.includes('youtube-nocookie.com')
+    ) {
+      return { type: 'youtube', url: trimmedUrl };
+    }
+    if (trimmedUrl.includes('deezer.com') && trimmedUrl.includes('/track/')) {
+      return { type: 'deezer-track', url: trimmedUrl };
+    }
+    if (trimmedUrl.includes('deezer.com')) {
+      return { type: 'deezer', url: trimmedUrl };
+    }
+    return null;
+  };
+
+  const handleAnalyze = () => {
+    const detected = detectURLType(urlInput);
+    if (!detected) {
+      setError('Veuillez entrer une URL YouTube ou Deezer valide');
+      return;
+    }
+
+    setError(null);
+    idCounter += 1;
+    const analysisId = `analysis-${idCounter}`;
+    const analyzedUrl = urlInput;
+
+    const newAnalysis: ActiveAnalysis = {
+      id: analysisId,
+      url: analyzedUrl,
+      urlType: detected.type,
+      progress: null,
+      paused: false,
+    };
+
+    setActiveAnalyses((prev) => [...prev, newAnalysis]);
+    setUrlInput('');
+
+    if (detected.type === 'deezer' || detected.type === 'deezer-track') {
+      latestDeezerIdRef.current = analysisId;
+    }
+
+    const commandName = detected.type === 'youtube'
+      ? 'fetch_youtube_info'
+      : detected.type === 'deezer-track'
+        ? 'fetch_deezer_track'
+        : 'fetch_deezer_playlist';
+
+    invoke<TrackInfo[]>(commandName,
+      { url: detected.url },
+    )
+      .then((tracks) => {
+        if (tracks.length > 0) {
+          setResults((prev) => [
+            { id: analysisId, url: analyzedUrl, urlType: detected.type, tracks },
+            ...prev,
+          ]);
+        }
+      })
+      .catch((err) => {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        setError(errorMsg);
+      })
+      .finally(() => {
+        setActiveAnalyses((prev) => prev.filter((a) => a.id !== analysisId));
+        if (latestDeezerIdRef.current === analysisId) {
+          latestDeezerIdRef.current = null;
+        }
+      });
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && urlInput.trim()) {
+      handleAnalyze();
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      await invoke('cancel_analyze');
+    } catch (err) {
+      console.error('Failed to cancel analyze:', err);
+    }
+  };
+
+  const handleTogglePause = async () => {
+    try {
+      await invoke<boolean>('toggle_pause_analyze');
+    } catch (err) {
+      console.error('Failed to toggle pause:', err);
+    }
+  };
+
+  const handleChangeFolder = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        title: 'Selectionner le dossier de telechargement',
+      });
+      if (selected && typeof selected === 'string') {
+        await onChangeFolder(selected);
+      }
+    } catch (error) {
+      console.error('Error selecting folder:', error);
+    }
+  };
+
+  const handleAddToQueue = useCallback((resultId: string, selectedTracks: TrackInfo[]) => {
+    onAddToQueue(selectedTracks);
+    setResults((prev) => prev.filter((r) => r.id !== resultId));
+    // Refresh downloaded-file status shortly after queuing (download hasn't started yet,
+    // but this keeps the state fresh if the user re-analyses the same playlist).
+    setTimeout(refreshDownloaded, 500);
+  }, [onAddToQueue, refreshDownloaded]);
+
+  const handleDismissResult = useCallback((resultId: string) => {
+    setResults((prev) => prev.filter((r) => r.id !== resultId));
+  }, []);
+
+  return (
+    <div className="screen main-screen">
+      <div className="main-header">
+        <div className="main-header-left">
+          <button className="main-back-btn" onClick={onBack} title="Accueil">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
+          <h1 className="main-header-title">
+            Télécharger
+          </h1>
+        </div>
+        <div className="main-header-actions">
+          <button className="quiz-mode-button" onClick={onOpenQuiz} title="Mode Quizz">
+            🎵 Quizz
+          </button>
+          <button className="settings-button" onClick={onSettingsClick} title="Parametres">
+            ⚙️
+          </button>
+        </div>
+      </div>
+
+      <div className="main-content">
+        <div className="download-folder-info" onClick={handleChangeFolder} title="Cliquer pour modifier">
+          <span className="folder-icon">📁</span>
+          <span>
+            {config.download_dir ? `Dossier: ${config.download_dir}` : 'Pas de dossier configure'}
+          </span>
+        </div>
+
+        {error && (
+          <Alert
+            type="error"
+            title="Erreur"
+            message={error}
+            onClose={() => setError(null)}
+          />
+        )}
+
+        <div className="url-input-section">
+          <label className="url-input-label">URL YouTube ou Deezer</label>
+          <div className="url-input-wrapper">
+            <input
+              type="text"
+              className="url-input"
+              placeholder="Colle une URL YouTube ou Deezer..."
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <button
+              className="analyze-button"
+              onClick={handleAnalyze}
+              disabled={!urlInput.trim()}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              Analyser
+            </button>
+          </div>
+        </div>
+
+        {/* Active analyses - each one gets its own card */}
+        {activeAnalyses.map((analysis) => (
+          <div key={analysis.id} className="analyze-loading">
+            <div className="analyze-loading-content">
+              {analysis.paused ? (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="var(--color-warning)" stroke="none">
+                  <rect x="6" y="4" width="4" height="16" rx="1" />
+                  <rect x="14" y="4" width="4" height="16" rx="1" />
+                </svg>
+              ) : (
+                <div className="equalizer" style={{ justifyContent: 'center', height: '36px' }}>
+                  <div className="equalizer-bar" />
+                  <div className="equalizer-bar" />
+                  <div className="equalizer-bar" />
+                  <div className="equalizer-bar" />
+                  <div className="equalizer-bar" />
+                </div>
+              )}
+              <div className="analyze-loading-text">
+                {analysis.progress ? (
+                  <>
+                    <span className="analyze-loading-title">
+                      {analysis.paused ? 'En pause' : 'Recherche YouTube'} {analysis.progress.current}/{analysis.progress.total}
+                    </span>
+                    <span className="analyze-loading-detail">
+                      {analysis.progress.artist} — {analysis.progress.track_title}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="analyze-loading-title">
+                      Analyse {analysis.urlType.startsWith('deezer') ? 'Deezer' : 'YouTube'}...
+                    </span>
+                    <span className="analyze-loading-detail analyze-loading-url">
+                      {analysis.url}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+            {analysis.urlType.startsWith('deezer') && (
+              <div className="analyze-loading-actions">
+                {analysis.progress && (
+                  <button className="analyze-action-btn pause" onClick={handleTogglePause} title={analysis.paused ? 'Reprendre' : 'Pause'}>
+                    {analysis.paused ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                        <rect x="6" y="4" width="4" height="16" rx="1" />
+                        <rect x="14" y="4" width="4" height="16" rx="1" />
+                      </svg>
+                    )}
+                    {analysis.paused ? 'Reprendre' : 'Pause'}
+                  </button>
+                )}
+                <button className="analyze-action-btn cancel" onClick={handleCancel} title="Annuler">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  Annuler
+                </button>
+              </div>
+            )}
+            <div className="analyze-loading-bar">
+              <div
+                className="analyze-loading-bar-fill"
+                style={analysis.progress ? {
+                  animation: analysis.paused ? 'none' : undefined,
+                  width: `${(analysis.progress.current / analysis.progress.total) * 100}%`,
+                  transition: 'width 0.3s ease-out',
+                } : undefined}
+              />
+            </div>
+          </div>
+        ))}
+
+        {/* Results list */}
+        {results.map((result) => (
+          <div key={result.id} className="analyze-result">
+            <div className="analyze-result-header">
+              <span className="analyze-result-badge">{result.urlType.startsWith('deezer') ? 'Deezer' : 'YouTube'}</span>
+              <span className="analyze-result-count">{result.tracks.length} piste{result.tracks.length > 1 ? 's' : ''}</span>
+              <button className="analyze-result-dismiss" onClick={() => handleDismissResult(result.id)} title="Fermer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <TrackList
+              tracks={result.tracks}
+              onAddToQueue={(selectedTracks) => handleAddToQueue(result.id, selectedTracks)}
+              isDownloaded={isDownloaded}
+              downloadDir={config.download_dir}
+            />
+          </div>
+        ))}
+
+        {/* Empty state */}
+        {activeAnalyses.length === 0 && results.length === 0 && (
+          <div className="main-empty-state">
+            <div className="main-empty-state-inner">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18V5l12-2v13" />
+                <circle cx="6" cy="18" r="3" />
+                <circle cx="18" cy="16" r="3" />
+              </svg>
+              <p className="main-empty-state-text">
+                Colle une URL YouTube ou Deezer pour commencer
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

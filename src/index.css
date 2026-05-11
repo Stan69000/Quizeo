@@ -1,0 +1,398 @@
+/* Voyage DL - Cosmic Mixtape Design System */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Color palette - Cosmic Mixtape */
+  --color-primary: #FF7B54;
+  --color-primary-hover: #FF6339;
+  --color-primary-light: #FFAB76;
+  --color-primary-glow: rgba(255, 123, 84, 0.35);
+  --color-primary-very-light: rgba(255, 123, 84, 0.12);
+
+  --color-accent: #00D4FF;
+  --color-accent-glow: rgba(0, 212, 255, 0.25);
+
+  --color-bg-dark: #0a0e1a;
+  --color-bg-darker: #060912;
+  --color-bg-secondary: rgba(255, 255, 255, 0.04);
+  --color-bg-tertiary: rgba(255, 255, 255, 0.08);
+  --color-bg-glass: rgba(255, 255, 255, 0.06);
+  --color-bg-glass-hover: rgba(255, 255, 255, 0.1);
+
+  --color-text-primary: #F0EDE8;
+  --color-text-secondary: #B5AFBA;
+  --color-text-tertiary: #6E687A;
+
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.14);
+
+  --color-success: #4ADE80;
+  --color-success-light: rgba(74, 222, 128, 0.1);
+  --color-error: #FB7185;
+  --color-error-light: rgba(251, 113, 133, 0.1);
+  --color-warning: #FBBF24;
+  --color-warning-light: rgba(251, 191, 36, 0.1);
+
+  /* Typography */
+  --font-display: 'Fredoka', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+  --font-family: var(--font-body);
+
+  /* Transitions */
+  --transition-fast: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 600ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* Border radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 30px var(--color-primary-glow);
+}
+
+/* Light theme overrides */
+:root[data-theme="light"] {
+  --color-bg-dark: #F4F2EE;
+  --color-bg-darker: #E8E5DF;
+  --color-bg-secondary: rgba(0, 0, 0, 0.04);
+  --color-bg-tertiary: rgba(0, 0, 0, 0.07);
+  --color-bg-glass: rgba(0, 0, 0, 0.04);
+  --color-bg-glass-hover: rgba(0, 0, 0, 0.08);
+
+  --color-text-primary: #1A1623;
+  --color-text-secondary: #5A5464;
+  --color-text-tertiary: #9B95A0;
+
+  --color-border: rgba(0, 0, 0, 0.10);
+  --color-border-light: rgba(0, 0, 0, 0.16);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.20);
+}
+
+body {
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: clamp(14px, 0.95vw, 18px);
+  line-height: 1.6;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Noise grain texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* Links */
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary-light);
+}
+
+/* Focus states - prominent for TV/keyboard nav */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible,
+label:focus-visible,
+.home-module-card:focus-visible,
+.track-row:focus-visible,
+.track-item:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* === TV / large-screen accessibility layer (Pass A) ===
+   Fluid sizing, larger hit targets, container cap. Scoped via min-width
+   so desktop laptops keep their current density. */
+
+/* App container cap so 4K TVs don't render a tiny island or a flat band */
+.app-container,
+.main-screen,
+.home-screen {
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Minimum hit targets - applies everywhere, key for TV at distance */
+button,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="button"],
+input[type="submit"],
+select {
+  min-height: 44px;
+}
+
+/* Compact icon-only buttons opt out via .icon-btn-sm if needed; otherwise
+   they get 44px which is what we want on TV. */
+
+/* Inputs (text/url) need height too */
+input[type="text"],
+input[type="url"],
+input[type="search"],
+input[type="number"],
+textarea {
+  min-height: 44px;
+  font-size: clamp(14px, 1vw, 18px);
+}
+
+/* Headings scale up on big screens */
+h1 { font-size: clamp(24px, 2.4vw, 40px); }
+h2 { font-size: clamp(20px, 1.8vw, 30px); }
+h3 { font-size: clamp(17px, 1.4vw, 24px); }
+
+/* Larger checkbox/radio for visibility from couch */
+input[type="checkbox"],
+input[type="radio"] {
+  width: clamp(18px, 1.4vw, 24px);
+  height: clamp(18px, 1.4vw, 24px);
+  min-width: clamp(18px, 1.4vw, 24px);
+  cursor: pointer;
+}
+
+/* Beyond a typical desktop, give the layout more breathing room.
+   Targets TV / large external monitors (>=1920px). */
+@media (min-width: 1920px) {
+  body { font-size: 18px; }
+  .app-container,
+  .main-screen,
+  .home-screen {
+    padding: 40px 48px;
+  }
+  button,
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="button"],
+  input[type="submit"],
+  select {
+    min-height: 52px;
+  }
+  input[type="text"],
+  input[type="url"],
+  input[type="search"],
+  input[type="number"],
+  textarea {
+    min-height: 52px;
+  }
+}
+
+/* Coarse pointer (touch screens, some TV setups) -> bigger targets */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="button"],
+  input[type="submit"],
+  select {
+    min-height: 52px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes equalizerBar1 {
+  0%, 100% { height: 8px; }
+  25% { height: 20px; }
+  50% { height: 12px; }
+  75% { height: 28px; }
+}
+
+@keyframes equalizerBar2 {
+  0%, 100% { height: 16px; }
+  25% { height: 8px; }
+  50% { height: 24px; }
+  75% { height: 12px; }
+}
+
+@keyframes equalizerBar3 {
+  0%, 100% { height: 12px; }
+  25% { height: 24px; }
+  50% { height: 8px; }
+  75% { height: 20px; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 20px var(--color-primary-glow); }
+  50% { box-shadow: 0 0 40px var(--color-primary-glow), 0 0 60px rgba(255, 123, 84, 0.15); }
+}
+
+@keyframes progressFill {
+  from { width: 0%; }
+  to { width: var(--progress-width); }
+}
+
+/* Utility classes */
+.fade-in { animation: fadeIn var(--transition-normal); }
+.slide-in-up { animation: slideInUp var(--transition-normal); }
+.slide-in-down { animation: slideInDown var(--transition-normal); }
+.spinner { animation: spin 1s linear infinite; }
+.pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Equalizer loader */
+.equalizer {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+}
+
+.equalizer-bar {
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to top, var(--color-primary), var(--color-primary-light));
+}
+
+.equalizer-bar:nth-child(1) { animation: equalizerBar1 0.8s ease-in-out infinite; }
+.equalizer-bar:nth-child(2) { animation: equalizerBar2 0.8s ease-in-out infinite 0.1s; }
+.equalizer-bar:nth-child(3) { animation: equalizerBar3 0.8s ease-in-out infinite 0.2s; }
+.equalizer-bar:nth-child(4) { animation: equalizerBar1 0.8s ease-in-out infinite 0.3s; }
+.equalizer-bar:nth-child(5) { animation: equalizerBar2 0.8s ease-in-out infinite 0.15s; }

@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Rust / Tauri
+src-tauri/target/
+
+# Sidecar binaries
+src-tauri/binaries/
+
+# ffmpeg build workspace (sources + objets, ~1Go)
+src-tauri/.build-ffmpeg/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# TypeScript build artifacts (tsc emits next to sources; not needed in repo)
+src/**/*.js
+src/**/*.d.ts
+src/**/*.d.ts.map
+src/**/*.js.map
+tsconfig.tsbuildinfo
