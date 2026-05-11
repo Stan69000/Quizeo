@@ -43,9 +43,10 @@ fn main() {
             scan_downloaded_files,
             export_m3u,
 
-            // Enrichment (Wikipedia + MusicBrainz + YouTube stream)
+            // Enrichment (Wikipedia + MusicBrainz + YouTube stream/video)
             fetch_track_enrichment,
             get_youtube_stream_url,
+            get_youtube_video_id,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

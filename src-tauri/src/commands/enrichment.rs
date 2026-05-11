@@ -269,3 +269,28 @@ pub async fn get_youtube_stream_url(query: String) -> Result<String, String> {
 
     Ok(url)
 }
+
+/// Ask yt-dlp for the YouTube video ID of a search result.
+/// Returns the bare ID (e.g. "dQw4w9WgXcQ") so the frontend can embed it.
+#[command]
+pub async fn get_youtube_video_id(query: String) -> Result<String, String> {
+    let yt_dlp = find_sidecar("yt-dlp")
+        .map_err(|e| format!("yt-dlp introuvable : {e}"))?;
+
+    let args = vec![
+        "--print".to_string(),
+        "id".to_string(),
+        "--no-playlist".to_string(),
+        format!("ytsearch1:{query}"),
+    ];
+
+    let output = run_sidecar_command_async(&yt_dlp, &args).await?;
+
+    let id = output
+        .lines()
+        .find(|l| !l.trim().is_empty())
+        .map(|l| l.trim().to_string())
+        .ok_or_else(|| "Aucun résultat YouTube".to_string())?;
+
+    Ok(id)
+}

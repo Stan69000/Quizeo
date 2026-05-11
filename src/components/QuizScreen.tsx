@@ -427,6 +427,8 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
   interface MBData { label?: string; country?: string; date?: string; tags?: string[]; }
   const [mbData, setMbData] = useState<MBData | null>(null);
   const [ytStreamLoading, setYtStreamLoading] = useState(false);
+  const [ytVideoId, setYtVideoId] = useState<string | null>(null);
+  const [ytVideoLoading, setYtVideoLoading] = useState(false);
   // Full-song player state (active once a YouTube stream or local file is playing)
   const [revealFullSong, setRevealFullSong] = useState(false);
   const [revealCurrentTime, setRevealCurrentTime] = useState(0);
@@ -568,6 +570,8 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
     setWikiSubject(null);
     setMbData(null);
     setYtStreamLoading(false);
+    setYtVideoId(null);
+    setYtVideoLoading(false);
     setRevealFullSong(false);
     setRevealCurrentTime(0);
     setRevealDuration(0);
@@ -807,6 +811,8 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
     setWikiSubject(null);
     setMbData(null);
     setYtStreamLoading(false);
+    setYtVideoId(null);
+    setYtVideoLoading(false);
     setRevealFullSong(false);
     setRevealCurrentTime(0);
     setRevealDuration(0);
@@ -951,7 +957,7 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
     return () => { cancelled = true; };
   }, [revealed, currentTrack]);
 
-  // Track time/duration for the full-song inline player
+  // Track time/duration for the full-song inline player + auto-advance on end
   useEffect(() => {
     if (!revealFullSong) return;
     const audio = audioRef.current;
@@ -960,11 +966,14 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
       setRevealCurrentTime(audio.currentTime);
       setRevealDuration(audio.duration || 0);
     };
+    const onEnded = () => nextRoundRef.current();
     audio.addEventListener('timeupdate', onTime);
     audio.addEventListener('durationchange', onTime);
+    audio.addEventListener('ended', onEnded);
     return () => {
       audio.removeEventListener('timeupdate', onTime);
       audio.removeEventListener('durationchange', onTime);
+      audio.removeEventListener('ended', onEnded);
     };
   }, [revealFullSong]);
 
@@ -1762,17 +1771,26 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-6h2V8h-2v8zm0-10h2V4h-2v2z"/></svg>
                         Voir sur Deezer
                       </button>
-                      {correct && (
+                      {correct && !ytVideoId && (
                         <button
-                          className="quiz-reveal-yt-btn"
+                          className={`quiz-reveal-yt-btn${ytVideoLoading ? ' is-loading' : ''}`}
+                          disabled={ytVideoLoading}
                           onClick={() => {
-                            const q = encodeURIComponent(`${currentTrack.title} ${currentTrack.artist} clip officiel`);
-                            invoke('plugin:shell|open', { path: `https://www.youtube.com/results?search_query=${q}` }).catch(() => {});
+                            if (ytVideoLoading) return;
+                            setYtVideoLoading(true);
+                            const query = `${currentTrack.title} ${currentTrack.artist} clip officiel`;
+                            invoke<string>('get_youtube_video_id', { query })
+                              .then((id) => setYtVideoId(id))
+                              .catch(() => {
+                                const q = encodeURIComponent(query);
+                                invoke('plugin:shell|open', { path: `https://www.youtube.com/results?search_query=${q}` }).catch(() => {});
+                              })
+                              .finally(() => setYtVideoLoading(false));
                           }}
-                          title="Voir le clip sur YouTube"
+                          title="Voir le clip"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
-                          🎬 Voir le clip
+                          {ytVideoLoading ? 'Chargement…' : '🎬 Voir le clip'}
                         </button>
                       )}
                     </div>
@@ -1901,6 +1919,22 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
                     {mbData.label && <span className="quiz-mb-badge">🏷 {mbData.label}</span>}
                     {mbData.date && <span className="quiz-mb-badge">📅 {mbData.date}</span>}
                     {mbData.country && <span className="quiz-mb-badge">🌐 {mbData.country}</span>}
+                  </div>
+                )}
+
+                {ytVideoId && (
+                  <div className="quiz-yt-embed">
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=1&rel=0`}
+                      title="Clip YouTube"
+                      allow="autoplay; encrypted-media"
+                      allowFullScreen
+                    />
+                    <button
+                      className="quiz-yt-embed-close"
+                      onClick={() => setYtVideoId(null)}
+                      title="Fermer"
+                    >✕</button>
                   </div>
                 )}
 
