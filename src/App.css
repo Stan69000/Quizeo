@@ -1871,6 +1871,24 @@
   align-items: center;
   gap: 14px;
   margin-bottom: 24px;
+  position: relative;
+}
+
+.quiz-mystery-cover {
+  position: absolute;
+  inset: -40px;
+  width: calc(100% + 80px);
+  height: calc(100% + 80px);
+  object-fit: cover;
+  border-radius: var(--radius-xl);
+  pointer-events: none;
+  z-index: 0;
+  transition: filter 1.2s ease-out, transform 1.2s ease-out;
+}
+
+.quiz-mystery > *:not(.quiz-mystery-cover) {
+  position: relative;
+  z-index: 1;
 }
 
 .quiz-disc {
@@ -3893,11 +3911,18 @@
   text-overflow: ellipsis;
 }
 
-.quiz-reveal-deezer-btn {
+.quiz-reveal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.quiz-reveal-deezer-btn,
+.quiz-reveal-yt-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-top: 6px;
   padding: 4px 10px;
   border: 1px solid var(--color-border);
   background: transparent;
@@ -3914,6 +3939,17 @@
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--color-primary-very-light);
+}
+
+.quiz-reveal-yt-btn {
+  border-color: rgba(255, 0, 0, 0.3);
+  color: #ff4444;
+}
+
+.quiz-reveal-yt-btn:hover {
+  border-color: #ff0000;
+  background: rgba(255, 0, 0, 0.08);
+  color: #ff2222;
 }
 
 .quiz-reveal-player {

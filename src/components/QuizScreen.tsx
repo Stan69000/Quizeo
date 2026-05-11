@@ -1652,8 +1652,17 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
 
           {!revealed && (() => {
             const theme = ROUND_THEMES[currentRound % ROUND_THEMES.length];
+            const blurPx = Math.round(28 * timerProgress);
             return (
               <div className="quiz-mystery">
+                {currentTrack.cover_url && (
+                  <img
+                    src={currentTrack.cover_url}
+                    alt=""
+                    className="quiz-mystery-cover"
+                    style={{ filter: `blur(${blurPx}px) brightness(0.55)`, transform: `scale(${1 + timerProgress * 0.08})` }}
+                  />
+                )}
                 <div className="quiz-vinyl">
                   <svg
                     className="quiz-vinyl-ring"
@@ -1744,14 +1753,29 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
                     {currentTrack.album && (
                       <span className="quiz-reveal-album">💿 {currentTrack.album}</span>
                     )}
-                    <button
-                      className="quiz-reveal-deezer-btn"
-                      onClick={() => invoke('plugin:shell|open', { path: deezerSearchUrl }).catch(() => {})}
-                      title="Rechercher sur Deezer"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-6h2V8h-2v8zm0-10h2V4h-2v2z"/></svg>
-                      Voir sur Deezer
-                    </button>
+                    <div className="quiz-reveal-links">
+                      <button
+                        className="quiz-reveal-deezer-btn"
+                        onClick={() => invoke('plugin:shell|open', { path: deezerSearchUrl }).catch(() => {})}
+                        title="Rechercher sur Deezer"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-6h2V8h-2v8zm0-10h2V4h-2v2z"/></svg>
+                        Voir sur Deezer
+                      </button>
+                      {correct && (
+                        <button
+                          className="quiz-reveal-yt-btn"
+                          onClick={() => {
+                            const q = encodeURIComponent(`${currentTrack.title} ${currentTrack.artist} clip officiel`);
+                            invoke('plugin:shell|open', { path: `https://www.youtube.com/results?search_query=${q}` }).catch(() => {});
+                          }}
+                          title="Voir le clip sur YouTube"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+                          🎬 Voir le clip
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Inline player — shows full controls once a full song is loaded */}
