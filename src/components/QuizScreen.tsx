@@ -368,7 +368,7 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
   }, [capturingKeyFor]);
 
   // Playlist search
-  const [setupTab, setSetupTab] = useState<'url' | 'search'>('url');
+  const [setupTab, setSetupTab] = useState<'search' | 'url'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<PlaylistSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -991,6 +991,36 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
           <div className="quiz-hero">
             <div className="quiz-hero-icon">🎵</div>
             <h2>Prêt(e) pour le blind test ?</h2>
+          </div>
+
+          {/* Curated quick-start playlists */}
+          <div className="quiz-suggested">
+            <p className="quiz-suggested-label">Playlists populaires</p>
+            <div className="quiz-suggested-grid">
+              {[
+                { emoji: '🔥', label: 'Top France',        query: 'top france hits' },
+                { emoji: '🎸', label: 'Années 80',         query: 'hits années 80' },
+                { emoji: '💃', label: 'Années 90',         query: 'hits années 90' },
+                { emoji: '🎤', label: 'Années 2000',       query: 'hits 2000 2010' },
+                { emoji: '🎭', label: 'Chanson française',  query: 'chanson française classique' },
+                { emoji: '🏰', label: 'Disney',            query: 'disney chansons' },
+                { emoji: '🎬', label: 'Musiques de films', query: 'bandes originales films' },
+                { emoji: '🌍', label: 'Pop International', query: 'pop international hits' },
+                { emoji: '🎧', label: 'Hip-Hop / R&B',    query: 'hip hop rnb french' },
+              ].map(({ emoji, label, query }) => (
+                <button
+                  key={query}
+                  className={`quiz-suggested-tile${searchQuery === query ? ' quiz-suggested-tile--active' : ''}`}
+                  onClick={() => {
+                    setSetupTab('search');
+                    setSearchQuery(query);
+                  }}
+                >
+                  <span className="quiz-suggested-emoji">{emoji}</span>
+                  <span className="quiz-suggested-text">{label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Source tabs */}

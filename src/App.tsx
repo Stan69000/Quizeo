@@ -58,11 +58,11 @@ function App() {
   useEffect(() => {
     if (loading || didInitialRouteRef.current) return;
     didInitialRouteRef.current = true;
-    setCurrentScreen(isConfigured() ? 'home' : 'setup');
-  }, [loading, isConfigured]);
+    setCurrentScreen('home'); // Always go home — setup only triggered on demand
+  }, [loading]);
 
   const handleSetupComplete = () => {
-    setCurrentScreen('home');
+    setCurrentScreen('main'); // User came from download CTA → go straight to downloader
   };
 
   const handleChangeFolder = async (newPath: string) => {
@@ -128,7 +128,10 @@ function App() {
         {currentScreen === 'home' && (
           <HomeScreen
             config={config}
-            onOpenDownload={() => setCurrentScreen('main')}
+            onOpenDownload={() => {
+              if (isConfigured()) setCurrentScreen('main');
+              else setCurrentScreen('setup');
+            }}
             onOpenQuiz={() => setCurrentScreen('quiz')}
             onOpenCinema={() => setCurrentScreen('cinema')}
             onSettingsClick={() => setShowSettings(true)}

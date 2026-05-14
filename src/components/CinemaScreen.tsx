@@ -311,8 +311,14 @@ export function CinemaScreen({ onExit }: CinemaScreenProps) {
       {/* Header */}
       <div className="cin-header">
         <button className="btn-ghost" onClick={onExit}>✕</button>
-        <span className="cin-progress">{currentIdx + 1} / {queue.length}</span>
-        <span className="cin-score">⭐ {score} pts</span>
+        <div className="cin-header-center">
+          <span className="cin-header-brand">Quizeo</span>
+          <span className="cin-header-mode">🎬 Cinéma & Séries</span>
+        </div>
+        <div className="cin-header-right">
+          <span className="cin-progress">{currentIdx + 1} / {queue.length}</span>
+          <span className="cin-score">⭐ {score}</span>
+        </div>
       </div>
 
       <div className="cin-body">

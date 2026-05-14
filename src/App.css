@@ -3712,6 +3712,69 @@
 
 /* ==================== PLAYLIST SEARCH ==================== */
 
+/* Curated playlist quick-start */
+.quiz-suggested {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.quiz-suggested-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.quiz-suggested-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.quiz-suggested-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 8px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.quiz-suggested-tile:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-very-light);
+}
+
+.quiz-suggested-tile--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-very-light);
+}
+
+.quiz-suggested-emoji { font-size: 22px; }
+
+.quiz-suggested-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.quiz-suggested-tile:hover .quiz-suggested-text,
+.quiz-suggested-tile--active .quiz-suggested-text {
+  color: var(--color-primary);
+}
+
+/* ── */
 .quiz-setup-tabs {
   display: flex;
   gap: 6px;
@@ -4990,12 +5053,47 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
+  gap: 8px;
 }
-.cin-progress { font-size: 13px; color: var(--color-text-secondary); font-weight: 600; }
-.cin-score { font-family: var(--font-display); font-size: 16px; color: var(--color-primary); }
+
+.cin-header-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  flex: 1;
+}
+
+.cin-header-brand {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6366f1, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.cin-header-mode {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.cin-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.cin-progress { font-size: 11px; color: var(--color-text-tertiary); font-weight: 600; }
+.cin-score { font-family: var(--font-display); font-size: 14px; color: #a78bfa; }
 
 .cin-body {
   flex: 1;
