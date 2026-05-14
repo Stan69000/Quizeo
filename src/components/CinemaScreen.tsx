@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { saveScore } from '../hooks/useScores';
 import { invoke } from '@tauri-apps/api/core';
 import {
   CATEGORY_LABELS,
@@ -30,6 +31,7 @@ interface WikiSummary {
 
 interface CinemaScreenProps {
   onExit: () => void;
+  autoStart?: boolean; // Skip setup and launch immediately with 'all' category
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -73,10 +75,11 @@ async function fetchWiki(title: string): Promise<WikiSummary | null> {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function CinemaScreen({ onExit }: CinemaScreenProps) {
-  const [phase, setPhase]             = useState<Phase>('setup');
+export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
+  const [phase, setPhase]             = useState<Phase>(autoStart ? 'loading' : 'setup');
   const [category, setCategory]       = useState<CinemaCategory | 'all'>('all');
   const [nRounds, setNRounds]         = useState(TOTAL_ROUNDS);
+  const didAutoStart                  = useRef(false);
 
   // Quiz state
   const [queue, setQueue]             = useState<CinemaItem[]>([]);
@@ -84,6 +87,8 @@ export function CinemaScreen({ onExit }: CinemaScreenProps) {
   const [videoId, setVideoId]         = useState<string | null>(null);
   const [nextVideoId, setNextVideoId] = useState<string | null>(null);
   const [score, setScore]             = useState(0);
+  const [streak, setStreak]           = useState(0);
+  const [newRecord, setNewRecord]     = useState(false);
   const [correct, setCorrect]         = useState<boolean | null>(null);
   const [qcmOptions, setQcmOptions]   = useState<string[]>([]);
   const [picked, setPicked]           = useState<string | null>(null);
@@ -140,6 +145,14 @@ export function CinemaScreen({ onExit }: CinemaScreenProps) {
     setPhase('loading');
   }, [category, nRounds]);
 
+  // Auto-start on mount when launched from Quick Play
+  useEffect(() => {
+    if (!autoStart || didAutoStart.current) return;
+    didAutoStart.current = true;
+    startGame();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
+
   // Trigger load when queue+idx are ready
   useEffect(() => {
     if (phase !== 'loading' || !currentItem) return;
@@ -175,7 +188,12 @@ export function CinemaScreen({ onExit }: CinemaScreenProps) {
   const doReveal = useCallback((isCorrect: boolean) => {
     clearInterval(timerRef.current!);
     setCorrect(isCorrect);
-    if (isCorrect) setScore((s) => s + Math.max(10, timer * 5));
+    if (isCorrect) {
+      setScore((s) => s + Math.max(10, timer * 5));
+      setStreak((s) => s + 1);
+    } else {
+      setStreak(0);
+    }
     setPhase('reveal');
     // Fetch Wikipedia in background
     if (currentItem) {
@@ -195,6 +213,8 @@ export function CinemaScreen({ onExit }: CinemaScreenProps) {
   const nextRound = () => {
     const next = currentIdx + 1;
     if (next >= queue.length) {
+      const result = saveScore('cinema', score, streak);
+      setNewRecord(result.newRecord);
       setPhase('result');
       return;
     }
@@ -290,7 +310,8 @@ export function CinemaScreen({ onExit }: CinemaScreenProps) {
           <span className="cin-result-medal">{medal}</span>
           <h1 className="cin-result-title">Score final</h1>
           <p className="cin-result-score">{score} pts</p>
-          <p className="cin-result-sub">{pct}% de réussite sur {queue.length} films</p>
+          {newRecord && <p className="cin-result-record">🏆 Nouveau record personnel !</p>}
+          <p className="cin-result-sub">{pct}% de réussite · {queue.length} questions</p>
           <div className="cin-result-btns">
             <button className="cin-start-btn" onClick={startGame}>↺ Rejouer</button>
             <button className="btn-ghost" onClick={onExit}>← Accueil</button>

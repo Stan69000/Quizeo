@@ -11,6 +11,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { QuizTrack, QuizSettings, QuizMode, QuizTarget, QuizDifficulty, PlaylistSearchResult, AudioFileInfo } from '../types';
 import { Alert } from './Alert';
+import { saveScore } from '../hooks/useScores';
 
 // ---------------------------------------------------------------------------
 // Web Audio buzz sounds — no external files needed
@@ -59,6 +60,7 @@ interface QuizScreenProps {
   onExit: () => void;
   audioFiles?: AudioFileInfo[];
   onJukeboxPlay?: (path: string) => void;
+  quickSearchQuery?: string; // Pre-fills search and auto-triggers — for Quick Play
 }
 
 const JUKEBOX_AUTOADVANCE = 6; // seconds before auto-next in jukebox mode
@@ -315,7 +317,7 @@ function buildQcmOptions(tracks: QuizTrack[], correctIdx: number, target: QuizTa
   return Array.from(new Set(shuffle([correctAns, ...distractors])));
 }
 
-export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScreenProps) {
+export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay, quickSearchQuery }: QuizScreenProps) {
   const [phase, setPhase] = useState<Phase>('setup');
   const [error, setError] = useState<string | null>(null);
 
@@ -369,7 +371,7 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
 
   // Playlist search
   const [setupTab, setSetupTab] = useState<'search' | 'url'>('search');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(quickSearchQuery ?? '');
   const [searchResults, setSearchResults] = useState<PlaylistSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
@@ -907,6 +909,12 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
     return history.find((e) => e.url === url)?.bestScore ?? 0;
   }, [history, url]);
   const isNewRecord = phase === 'result' && score > 0 && score > previousBest;
+
+  // Sync to unified scores store when result is shown
+  useEffect(() => {
+    if (phase !== 'result' || score === 0) return;
+    saveScore('music', score, maxCombo);
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const previousBestChrono = useMemo(() => history.find((e) => e.url === url)?.bestChronoTime, [history, url]);
   const isNewChronoRecord = phase === 'result' && settings.mode === 'chrono' && chronoTotal > 0
     && (previousBestChrono === undefined || chronoTotal < previousBestChrono);
@@ -1772,14 +1780,16 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
               <>
               <div className="quiz-reveal">
                 {/* Verdict */}
-                <p className={correct ? 'quiz-correct' : 'quiz-wrong'}>
-                  {correct
-                    ? ['🎉 Bravo !', '🏆 Trop fort !', '✨ Bien joué !', '🌟 Magnifique !'][currentRound % 4]
-                    : ['💔 Raté', '😅 Pas cette fois', '🙈 Aïe', '😬 Presque'][currentRound % 4]}
-                </p>
-                {correct && (
-                  <p className="quiz-points-won">+{lastResult?.points} pts ⚡</p>
-                )}
+                <div className={`quiz-verdict-wrap${correct ? ' quiz-verdict-win' : ' quiz-verdict-lose'}`}>
+                  <p className={correct ? 'quiz-correct' : 'quiz-wrong'}>
+                    {correct
+                      ? ['🎉 Bravo !', '🏆 Trop fort !', '✨ Bien joué !', '🌟 Magnifique !'][currentRound % 4]
+                      : ['💔 Raté', '😅 Pas cette fois', '🙈 Aïe', '😬 Presque'][currentRound % 4]}
+                  </p>
+                  {correct && (
+                    <p className="quiz-points-won quiz-points-pop">+{lastResult?.points} pts ⚡</p>
+                  )}
+                </div>
 
                 {/* Track info card */}
                 <div className="quiz-reveal-card">

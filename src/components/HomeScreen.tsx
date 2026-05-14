@@ -5,8 +5,8 @@ import { AppConfig } from '../types';
 interface HomeScreenProps {
   config: AppConfig;
   onOpenDownload: () => void;
-  onOpenQuiz: () => void;
-  onOpenCinema: () => void;
+  onOpenQuiz: (quickSearch?: string) => void;
+  onOpenCinema: (autoStart?: boolean) => void;
   onSettingsClick: () => void;
   onToggleTheme?: () => void;
 }
@@ -17,6 +17,12 @@ const CATEGORIES = [
   { icon: '📺', label: 'Séries' },
   { icon: '🎮', label: 'Gaming' },
   { icon: '🌍', label: 'Années 80–2000' },
+];
+
+const QUICK_MUSIC = [
+  'hits années 80', 'top france hits', 'disney chansons',
+  'pop international hits', 'hits années 90', 'chanson française classique',
+  'bandes originales films', 'hits 2000 2010', 'hip hop rnb french',
 ];
 
 export function HomeScreen({ onOpenDownload, onOpenQuiz, onOpenCinema, onSettingsClick, onToggleTheme }: HomeScreenProps) {
@@ -32,12 +38,31 @@ export function HomeScreen({ onOpenDownload, onOpenQuiz, onOpenCinema, onSetting
     return () => clearInterval(t);
   }, []);
 
+  const handleQuickPlay = () => {
+    if (Math.random() < 0.5) {
+      // Random music preset
+      const query = QUICK_MUSIC[Math.floor(Math.random() * QUICK_MUSIC.length)];
+      onOpenQuiz(query);
+    } else {
+      // Cinema, auto-start
+      onOpenCinema(true);
+    }
+  };
+
   return (
     <div className="qz-home">
       {/* Topbar */}
       <div className="qz-topbar">
         <span className="qz-version">{appVersion ? `v${appVersion}` : ''}</span>
         <div className="qz-topbar-actions">
+          {/* Downloader moved here as a discreet icon */}
+          <button className="qz-icon-btn" onClick={onOpenDownload} title="Télécharger de la musique">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
           {onToggleTheme && (
             <button className="qz-icon-btn" onClick={onToggleTheme} title="Thème">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -70,10 +95,7 @@ export function HomeScreen({ onOpenDownload, onOpenQuiz, onOpenCinema, onSetting
 
         <div className="qz-cats">
           {CATEGORIES.map((c, i) => (
-            <span
-              key={c.label}
-              className={`qz-cat${i === activeCat ? ' qz-cat--active' : ''}`}
-            >
+            <span key={c.label} className={`qz-cat${i === activeCat ? ' qz-cat--active' : ''}`}>
               {c.icon} {c.label}
             </span>
           ))}
@@ -82,32 +104,24 @@ export function HomeScreen({ onOpenDownload, onOpenQuiz, onOpenCinema, onSetting
 
       {/* Actions */}
       <div className="qz-actions">
-        <div className="qz-modes">
-          <button className="qz-play-btn" onClick={onOpenQuiz}>
-            <span className="qz-play-icon">🎵</span>
-            <span className="qz-play-label">
-              <span className="qz-play-main">Blind test musical</span>
-              <span className="qz-play-sub">Deezer · QCM · Multi-joueurs</span>
-            </span>
-          </button>
+        {/* Quick play — primary CTA */}
+        <button className="qz-quickplay-btn" onClick={handleQuickPlay}>
+          <span className="qz-quickplay-dice">🎲</span>
+          <span className="qz-quickplay-label">
+            <span className="qz-quickplay-main">Jouer maintenant</span>
+            <span className="qz-quickplay-sub">Musique ou Cinéma · sélection surprise</span>
+          </span>
+        </button>
 
-          <button className="qz-play-btn qz-play-btn--cinema" onClick={onOpenCinema}>
-            <span className="qz-play-icon">🎬</span>
-            <span className="qz-play-label">
-              <span className="qz-play-main">Cinéma & Séries</span>
-              <span className="qz-play-sub">Bandes-annonces · Films · Séries</span>
-            </span>
+        {/* Mode selection — secondary */}
+        <div className="qz-modes">
+          <button className="qz-mode-btn" onClick={() => onOpenQuiz()}>
+            🎵 Blind test musical
+          </button>
+          <button className="qz-mode-btn qz-mode-btn--cinema" onClick={() => onOpenCinema()}>
+            🎬 Cinéma & Séries
           </button>
         </div>
-
-        <button className="qz-dl-btn" onClick={onOpenDownload}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          Télécharger de la musique
-        </button>
       </div>
 
       <div className="qz-orb qz-orb--1" />

@@ -21,12 +21,15 @@ import { invoke } from '@tauri-apps/api/core';
 
 type Screen = 'setup' | 'home' | 'main' | 'quiz' | 'cinema';
 
+
 let jobCounter = 0;
 
 function App() {
   const { config, loading, isConfigured, saveConfig } = useConfig();
   const [, toggleTheme] = useTheme();
   const [currentScreen, setCurrentScreen] = useState<Screen>('setup');
+  const [quickSearch, setQuickSearch] = useState<string | null>(null);
+  const [cinemaAutoStart, setCinemaAutoStart] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [downloadJobs, setDownloadJobs] = useState<DownloadJob[]>([]);
   const [audioFiles, setAudioFiles] = useState<AudioFileInfo[]>([]);
@@ -132,8 +135,8 @@ function App() {
               if (isConfigured()) setCurrentScreen('main');
               else setCurrentScreen('setup');
             }}
-            onOpenQuiz={() => setCurrentScreen('quiz')}
-            onOpenCinema={() => setCurrentScreen('cinema')}
+            onOpenQuiz={(quickSearch) => { setQuickSearch(quickSearch ?? null); setCurrentScreen('quiz'); }}
+            onOpenCinema={(autoStart) => { setCinemaAutoStart(autoStart ?? false); setCurrentScreen('cinema'); }}
             onSettingsClick={() => setShowSettings(true)}
             onToggleTheme={toggleTheme}
           />
@@ -155,11 +158,12 @@ function App() {
             onExit={() => setCurrentScreen('home')}
             audioFiles={audioFiles}
             onJukeboxPlay={handleJukeboxPlay}
+            quickSearchQuery={quickSearch ?? undefined}
           />
         )}
 
         {currentScreen === 'cinema' && (
-          <CinemaScreen onExit={() => setCurrentScreen('home')} />
+          <CinemaScreen onExit={() => setCurrentScreen('home')} autoStart={cinemaAutoStart} />
         )}
       </div>
 

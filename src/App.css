@@ -1916,6 +1916,44 @@
 .quiz-correct { color: var(--color-success) !important; font-size: 22px; font-weight: 700; }
 .quiz-wrong { color: var(--color-error) !important; font-size: 22px; font-weight: 700; }
 
+/* Verdict wrapper with flash animation */
+.quiz-verdict-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  animation: verdict-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.quiz-verdict-win  { animation: verdict-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), flash-win 0.6s ease-out; }
+.quiz-verdict-lose { animation: verdict-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), flash-lose 0.5s ease-out; }
+
+@keyframes verdict-pop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+@keyframes flash-win {
+  0%   { filter: drop-shadow(0 0 20px var(--color-success)); }
+  100% { filter: none; }
+}
+@keyframes flash-lose {
+  0%   { filter: drop-shadow(0 0 20px var(--color-error)); }
+  100% { filter: none; }
+}
+
+/* Points pop animation */
+.quiz-points-pop {
+  animation: points-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes points-pop {
+  0%   { transform: scale(0.6) translateY(8px); opacity: 0; }
+  100% { transform: scale(1)   translateY(0);   opacity: 1; }
+}
+
+/* Cinema result record */
+.cin-result-record {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--color-warning);
+  animation: verdict-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 .quiz-qcm { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 480px; }
 .quiz-qcm-option {
   padding: 14px 18px;
@@ -4890,18 +4928,69 @@
   border-color: var(--color-border-light);
 }
 
-/* Two game mode buttons side by side */
-.qz-modes {
+/* ── Quick Play button (primary CTA) */
+.qz-quickplay-btn {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
   align-items: center;
+  gap: 18px;
+  padding: 20px 40px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #c026d3 100%);
+  border: none;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  box-shadow: 0 10px 40px rgba(255, 123, 84, 0.4), 0 0 0 0 rgba(192, 38, 211, 0.3);
+  transition: var(--transition-bounce);
+  animation: pulse-glow-qp 3s ease-in-out infinite;
 }
 
-@media (min-width: 640px) {
-  .qz-modes { flex-direction: row; justify-content: center; }
+@keyframes pulse-glow-qp {
+  0%, 100% { box-shadow: 0 10px 40px rgba(255, 123, 84, 0.4); }
+  50%       { box-shadow: 0 10px 48px rgba(192, 38, 211, 0.55), 0 0 60px rgba(255, 123, 84, 0.2); }
 }
+
+.qz-quickplay-btn:hover { transform: scale(1.04) translateY(-2px); }
+.qz-quickplay-btn:active { transform: scale(0.98); }
+
+.qz-quickplay-dice { font-size: 28px; animation: float 2s ease-in-out infinite; }
+
+.qz-quickplay-label {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+}
+.qz-quickplay-main {
+  font-family: var(--font-display);
+  font-size: 26px; font-weight: 700; color: #fff; line-height: 1;
+}
+.qz-quickplay-sub {
+  font-family: var(--font-body);
+  font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 500;
+}
+
+/* Two game mode buttons side by side — secondary to Quick Play */
+.qz-modes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.qz-mode-btn {
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-glass);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+.qz-mode-btn:hover {
+  background: var(--color-bg-glass-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-primary);
+}
+.qz-mode-btn--cinema:hover { border-color: #6366f1; }
 
 /* Cinema variant of the play button */
 .qz-play-btn--cinema {
