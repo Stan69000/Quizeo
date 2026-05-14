@@ -1663,7 +1663,7 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay, quickSearch
     const dashOffset = circumference * (1 - timerProgress);
 
     return (
-      <div className={`screen quiz-screen ${celebration === 'lose' ? 'shake' : ''}`}>
+      <div className={`screen quiz-screen ${celebration === 'lose' ? 'shake' : ''} ${timerProgress <= 0.25 && !revealed ? 'quiz-screen--urgent' : ''}`}>
         <div className="quiz-header">
           <button className="btn-ghost" onClick={() => setPhase('result')}>Arrêter</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -1801,6 +1801,15 @@
 /* ========== Quiz Screen ========== */
 .quiz-screen { display: flex; flex-direction: column; height: 100%; }
 
+/* Urgent state — screen edge pulses red when timer ≤ 25% */
+.quiz-screen--urgent {
+  animation: urgency-pulse 0.8s ease-in-out infinite;
+}
+@keyframes urgency-pulse {
+  0%, 100% { box-shadow: inset 0 0 0px 0px rgba(251, 113, 133, 0); }
+  50%       { box-shadow: inset 0 0 40px 8px rgba(251, 113, 133, 0.35); }
+}
+
 .quiz-header {
   display: flex;
   align-items: center;
@@ -1954,18 +1963,21 @@
   animation: verdict-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.quiz-qcm { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 480px; }
+.quiz-qcm { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 480px; }
 .quiz-qcm-option {
-  padding: 14px 18px;
+  padding: 16px 20px;
   border: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
   color: var(--color-text-primary);
   border-radius: var(--radius-md);
   cursor: pointer;
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 17px;
   text-align: left;
   transition: all 0.15s ease;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
 }
 .quiz-qcm-option:hover { background: var(--color-bg-tertiary); border-color: var(--color-primary); }
 .quiz-qcm-option.is-picked { background: var(--color-primary-very-light); border-color: var(--color-primary); }
@@ -2113,14 +2125,15 @@
 .quiz-leaderboard li strong { color: var(--color-primary); }
 
 .btn-primary, .btn-secondary, .btn-ghost {
-  padding: 12px 20px;
+  padding: 13px 22px;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 16px;
   cursor: pointer;
   transition: all 0.15s ease;
+  min-height: 46px;
 }
 .btn-primary { background: var(--color-primary); color: white; }
 .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
@@ -2498,6 +2511,19 @@
   border: 1px solid var(--color-border);
   min-width: 48px;
   text-align: center;
+  transition: color 0.3s, border-color 0.3s, background 0.3s;
+}
+
+.quiz-screen--urgent .quiz-vinyl-time {
+  color: var(--color-error);
+  border-color: rgba(251, 113, 133, 0.5);
+  background: rgba(251, 113, 133, 0.08);
+  animation: tick-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes tick-pulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50%       { transform: translateX(-50%) scale(1.12); }
 }
 
 .quiz-mystery-label {
@@ -5073,17 +5099,18 @@
 }
 
 .cin-cat-btn {
-  padding: 12px 16px;
+  padding: 14px 16px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
   color: var(--color-text-secondary);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-fast);
   text-align: left;
+  min-height: 50px;
 }
 .cin-cat-btn:hover { border-color: #6366f1; color: var(--color-text-primary); }
 .cin-cat-btn--active { border-color: #6366f1; background: rgba(99,102,241,0.12); color: #a78bfa; }
@@ -5091,15 +5118,16 @@
 .cin-rounds-row { display: flex; gap: 8px; }
 .cin-round-btn {
   flex: 1;
-  padding: 10px;
+  padding: 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
   color: var(--color-text-secondary);
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
   transition: var(--transition-fast);
+  min-height: 50px;
 }
 .cin-round-btn:hover { border-color: #6366f1; }
 .cin-round-btn--active { border-color: #6366f1; background: rgba(99,102,241,0.12); color: #a78bfa; }
@@ -5252,18 +5280,22 @@
 }
 
 .cin-qcm-btn {
-  padding: 14px 12px;
+  padding: 16px 14px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   background: var(--color-bg-glass);
   color: var(--color-text-primary);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-fast);
   text-align: center;
   line-height: 1.3;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .cin-qcm-btn:hover:not(:disabled) { border-color: #6366f1; background: rgba(99,102,241,0.1); }
 .cin-qcm-btn:disabled { cursor: default; }
@@ -5324,17 +5356,18 @@
 .cin-wiki-link:hover { text-decoration: underline; }
 
 .cin-next-btn {
-  padding: 12px 28px;
+  padding: 15px 32px;
   border: none;
   border-radius: var(--radius-full);
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
   cursor: pointer;
   transition: var(--transition-bounce);
   box-shadow: 0 4px 16px rgba(99,102,241,0.35);
+  min-height: 52px;
 }
 .cin-next-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.5); }
 

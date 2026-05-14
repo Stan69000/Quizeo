@@ -325,10 +325,11 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
 
   const isRevealed = phase === 'reveal';
   const timerPct   = timer / ROUND_DURATION;
+  const isUrgent   = timer <= 5 && !isRevealed;
 
   // Playing + Reveal
   return (
-    <div className="screen cin-screen">
+    <div className={`screen cin-screen${isUrgent ? ' quiz-screen--urgent' : ''}`}>
       {/* Header */}
       <div className="cin-header">
         <button className="btn-ghost" onClick={onExit}>✕</button>
