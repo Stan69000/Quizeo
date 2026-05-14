@@ -85,7 +85,6 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
   const [queue, setQueue]             = useState<CinemaItem[]>([]);
   const [currentIdx, setCurrentIdx]   = useState(0);
   const [videoId, setVideoId]         = useState<string | null>(null);
-  const [nextVideoId, setNextVideoId] = useState<string | null>(null);
   const [score, setScore]             = useState(0);
   const [streak, setStreak]           = useState(0);
   const [newRecord, setNewRecord]     = useState(false);
@@ -96,24 +95,29 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
   const [wiki, setWiki]               = useState<WikiSummary | null>(null);
   const [loadError, setLoadError]     = useState<string | null>(null);
 
-  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
-  const phaseRef   = useRef(phase);
+  const timerRef      = useRef<ReturnType<typeof setInterval> | null>(null);
+  const phaseRef      = useRef(phase);
+  const preloadCache  = useRef<Record<string, string>>({});
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
   const currentItem = queue[currentIdx] ?? null;
-  const pool        = queue; // use the shuffled queue as QCM pool
+  const pool        = queue;
 
-  // ── Preload next video ID in background ───────────────────────────────────
-  const preloadNext = useCallback((idx: number, q: CinemaItem[]) => {
-    const next = q[idx + 1];
-    if (!next) return;
-    invoke<string>('get_youtube_video_id', { query: next.searchQuery })
-      .then((id) => setNextVideoId(id))
+  // ── Fetch and cache a video ID for an item ────────────────────────────────
+  const prefetchItem = useCallback((item: CinemaItem) => {
+    if (preloadCache.current[item.searchQuery]) return;
+    invoke<string>('get_youtube_video_id', { query: item.searchQuery })
+      .then((id) => { preloadCache.current[item.searchQuery] = id; })
       .catch(() => {});
   }, []);
 
+  // ── Preload next 2 items in background ────────────────────────────────────
+  const preloadNext = useCallback((idx: number, q: CinemaItem[]) => {
+    [q[idx + 1], q[idx + 2]].filter(Boolean).forEach(prefetchItem);
+  }, [prefetchItem]);
+
   // ── Load video for a given item ───────────────────────────────────────────
-  const loadVideo = useCallback(async (item: CinemaItem, preloaded: string | null) => {
+  const loadVideo = useCallback(async (item: CinemaItem) => {
     setPhase('loading');
     setVideoId(null);
     setLoadError(null);
@@ -122,14 +126,16 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
     setCorrect(null);
 
     try {
-      const id = preloaded ?? await invoke<string>('get_youtube_video_id', { query: item.searchQuery });
+      const cached = preloadCache.current[item.searchQuery];
+      const id = cached ?? await invoke<string>('get_youtube_video_id', { query: item.searchQuery });
+      delete preloadCache.current[item.searchQuery];
       setVideoId(id);
       setQcmOptions(buildQcmOptions(item, pool));
       setTimer(ROUND_DURATION);
       setPhase('playing');
     } catch (e) {
       setLoadError(String(e));
-      setPhase('loading'); // stay on loading so user can retry
+      setPhase('loading');
     }
   }, [pool]);
 
@@ -138,12 +144,14 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
     const items = getItemsByCategory(category)
       .sort(() => Math.random() - 0.5)
       .slice(0, nRounds);
+    preloadCache.current = {};
     setQueue(items);
     setCurrentIdx(0);
     setScore(0);
-    setNextVideoId(null);
     setPhase('loading');
-  }, [category, nRounds]);
+    // Eagerly prefetch first 3 items while state settles
+    items.slice(0, 3).forEach(prefetchItem);
+  }, [category, nRounds, prefetchItem]);
 
   // Auto-start on mount when launched from Quick Play
   useEffect(() => {
@@ -156,8 +164,7 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
   // Trigger load when queue+idx are ready
   useEffect(() => {
     if (phase !== 'loading' || !currentItem) return;
-    const preloaded = currentIdx === 0 ? null : nextVideoId;
-    loadVideo(currentItem, preloaded);
+    loadVideo(currentItem);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentItem, currentIdx]);
 
@@ -222,6 +229,24 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
     setPhase('loading');
   };
 
+  // ── Auto-skip on YouTube embed errors (101 / 150 / 153) ──────────────────
+  const skipFired = useRef(false);
+  useEffect(() => {
+    if (phase !== 'playing') { skipFired.current = false; return; }
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data?.event === 'onError' && [2, 101, 150, 153].includes(data.info)) {
+          if (skipFired.current) return;
+          skipFired.current = true;
+          nextRound();
+        }
+      } catch { /* not a YT message */ }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [phase, nextRound]);
+
   // ─── Renders ──────────────────────────────────────────────────────────────
 
   // Setup screen
@@ -237,37 +262,39 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
             <p className="cin-setup-sub">Trouve le film ou la série d'après sa bande-annonce</p>
           </div>
 
-          <div className="cin-setup-section">
-            <label className="cin-setup-label">Catégorie</label>
-            <div className="cin-cat-grid">
-              {(['all', 'film', 'serie', 'animation'] as const).map((cat) => (
-                <button
-                  key={cat}
-                  className={`cin-cat-btn${category === cat ? ' cin-cat-btn--active' : ''}`}
-                  onClick={() => setCategory(cat)}
-                >
-                  {cat === 'all' ? '🎲 Tout mélanger' : CATEGORY_LABELS[cat]}
-                </button>
-              ))}
+          <div className="cin-setup-right">
+            <div className="cin-setup-section">
+              <label className="cin-setup-label">Catégorie</label>
+              <div className="cin-cat-grid">
+                {(['all', 'film', 'serie', 'animation'] as const).map((cat) => (
+                  <button
+                    key={cat}
+                    className={`cin-cat-btn${category === cat ? ' cin-cat-btn--active' : ''}`}
+                    onClick={() => setCategory(cat)}
+                  >
+                    {cat === 'all' ? '🎲 Tout mélanger' : CATEGORY_LABELS[cat]}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="cin-setup-section">
-            <label className="cin-setup-label">Nombre de questions</label>
-            <div className="cin-rounds-row">
-              {[5, 8, 10, 15].map((n) => (
-                <button
-                  key={n}
-                  className={`cin-round-btn${nRounds === n ? ' cin-round-btn--active' : ''}`}
-                  onClick={() => setNRounds(n)}
-                >{n}</button>
-              ))}
+            <div className="cin-setup-section">
+              <label className="cin-setup-label">Nombre de questions</label>
+              <div className="cin-rounds-row">
+                {[5, 8, 10, 15].map((n) => (
+                  <button
+                    key={n}
+                    className={`cin-round-btn${nRounds === n ? ' cin-round-btn--active' : ''}`}
+                    onClick={() => setNRounds(n)}
+                  >{n}</button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <button className="cin-start-btn" onClick={startGame}>
-            ▶ Lancer le quiz
-          </button>
+            <button className="cin-start-btn" onClick={startGame}>
+              ▶ Lancer le quiz
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -282,7 +309,7 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
             <>
               <p className="cin-load-error">⚠️ Impossible de charger la bande-annonce</p>
               <p className="cin-load-error-sub">{loadError}</p>
-              <button className="btn-primary" onClick={() => currentItem && loadVideo(currentItem, null)}>
+              <button className="btn-primary" onClick={() => currentItem && loadVideo(currentItem)}>
                 Réessayer
               </button>
               <button className="btn-ghost" onClick={nextRound}>Passer →</button>
@@ -348,7 +375,7 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
         <div className="cin-video-wrap">
           <iframe
             key={videoId}
-            src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1${isRevealed ? '&controls=1' : '&controls=0'}`}
+            src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1${isRevealed ? '&controls=1' : '&controls=0'}`}
             title={isRevealed ? currentItem.title : 'Bande-annonce mystère'}
             allow="autoplay; encrypted-media"
             allowFullScreen
