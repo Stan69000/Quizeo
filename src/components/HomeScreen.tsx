@@ -6,6 +6,7 @@ interface HomeScreenProps {
   config: AppConfig;
   onOpenDownload: () => void;
   onOpenQuiz: () => void;
+  onOpenCinema: () => void;
   onSettingsClick: () => void;
   onToggleTheme?: () => void;
 }
@@ -18,7 +19,7 @@ const CATEGORIES = [
   { icon: '🌍', label: 'Années 80–2000' },
 ];
 
-export function HomeScreen({ onOpenDownload, onOpenQuiz, onSettingsClick, onToggleTheme }: HomeScreenProps) {
+export function HomeScreen({ onOpenDownload, onOpenQuiz, onOpenCinema, onSettingsClick, onToggleTheme }: HomeScreenProps) {
   const [appVersion, setAppVersion] = useState('');
   const [activeCat, setActiveCat] = useState(0);
 
@@ -81,13 +82,23 @@ export function HomeScreen({ onOpenDownload, onOpenQuiz, onSettingsClick, onTogg
 
       {/* Actions */}
       <div className="qz-actions">
-        <button className="qz-play-btn" onClick={onOpenQuiz}>
-          <span className="qz-play-icon">▶</span>
-          <span className="qz-play-label">
-            <span className="qz-play-main">Jouer</span>
-            <span className="qz-play-sub">Blind test · QCM · Multi-joueurs</span>
-          </span>
-        </button>
+        <div className="qz-modes">
+          <button className="qz-play-btn" onClick={onOpenQuiz}>
+            <span className="qz-play-icon">🎵</span>
+            <span className="qz-play-label">
+              <span className="qz-play-main">Blind test musical</span>
+              <span className="qz-play-sub">Deezer · QCM · Multi-joueurs</span>
+            </span>
+          </button>
+
+          <button className="qz-play-btn qz-play-btn--cinema" onClick={onOpenCinema}>
+            <span className="qz-play-icon">🎬</span>
+            <span className="qz-play-label">
+              <span className="qz-play-main">Cinéma & Séries</span>
+              <span className="qz-play-sub">Bandes-annonces · Films · Séries</span>
+            </span>
+          </button>
+        </div>
 
         <button className="qz-dl-btn" onClick={onOpenDownload}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

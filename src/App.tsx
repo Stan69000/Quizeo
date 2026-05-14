@@ -1,5 +1,5 @@
 /**
- * Main App component for Voyage DL
+ * Main App component for Quizeo
  * Manages screen navigation, app state, and download queue
  */
 
@@ -15,10 +15,11 @@ import { MiniPlayer } from './components/MiniPlayer';
 import { Settings } from './components/Settings';
 import { DownloadQueue, DownloadJob } from './components/DownloadQueue';
 import { QuizScreen } from './components/QuizScreen';
+import { CinemaScreen } from './components/CinemaScreen';
 import { AppConfig, TrackInfo, AudioFileInfo } from './types';
 import { invoke } from '@tauri-apps/api/core';
 
-type Screen = 'setup' | 'home' | 'main' | 'quiz';
+type Screen = 'setup' | 'home' | 'main' | 'quiz' | 'cinema';
 
 let jobCounter = 0;
 
@@ -129,6 +130,7 @@ function App() {
             config={config}
             onOpenDownload={() => setCurrentScreen('main')}
             onOpenQuiz={() => setCurrentScreen('quiz')}
+            onOpenCinema={() => setCurrentScreen('cinema')}
             onSettingsClick={() => setShowSettings(true)}
             onToggleTheme={toggleTheme}
           />
@@ -152,9 +154,15 @@ function App() {
             onJukeboxPlay={handleJukeboxPlay}
           />
         )}
+
+        {currentScreen === 'cinema' && (
+          <CinemaScreen onExit={() => setCurrentScreen('home')} />
+        )}
       </div>
 
-      {currentScreen !== 'quiz' && <MiniPlayer files={audioFiles} onRequestRefresh={refreshAudioFiles} externalPlay={jukeboxPlay} />}
+      {currentScreen !== 'quiz' && currentScreen !== 'cinema' && (
+        <MiniPlayer files={audioFiles} onRequestRefresh={refreshAudioFiles} externalPlay={jukeboxPlay} />
+      )}
       <DownloadQueue jobs={downloadJobs} onJobDone={handleJobDone} />
 
       {showSettings && (
