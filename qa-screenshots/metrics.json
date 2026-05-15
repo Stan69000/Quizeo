@@ -1,0 +1,210 @@
+[
+  {
+    "viewport": {
+      "name": "375x812",
+      "width": 375,
+      "height": 812
+    },
+    "home": {
+      "viewport": {
+        "vw": 375,
+        "vh": 812
+      },
+      "doc": {
+        "scrollWidth": 375,
+        "clientWidth": 375,
+        "scrollHeight": 812,
+        "clientHeight": 812,
+        "bodyScrollWidth": 375
+      },
+      "horizontalOverflow": false,
+      "tooSmallTargetCount": 3,
+      "tooSmallTargetSample": [
+        {
+          "w": 34,
+          "h": 44,
+          "text": ""
+        },
+        {
+          "w": 34,
+          "h": 44,
+          "text": ""
+        },
+        {
+          "w": 34,
+          "h": 44,
+          "text": ""
+        }
+      ],
+      "trackedOverflowCount": 0,
+      "trackedOverflow": []
+    },
+    "quiz": {
+      "docScrollWidth": 375,
+      "docClientWidth": 375,
+      "horizontalOverflow": false,
+      "trackedOverflowCount": 0,
+      "trackedOverflow": []
+    }
+  },
+  {
+    "viewport": {
+      "name": "768x1024",
+      "width": 768,
+      "height": 1024
+    },
+    "home": {
+      "viewport": {
+        "vw": 768,
+        "vh": 1024
+      },
+      "doc": {
+        "scrollWidth": 768,
+        "clientWidth": 768,
+        "scrollHeight": 1024,
+        "clientHeight": 1024,
+        "bodyScrollWidth": 768
+      },
+      "horizontalOverflow": false,
+      "tooSmallTargetCount": 3,
+      "tooSmallTargetSample": [
+        {
+          "w": 34,
+          "h": 44,
+          "text": ""
+        },
+        {
+          "w": 34,
+          "h": 44,
+          "text": ""
+        },
+        {
+          "w": 34,
+          "h": 44,
+          "text": ""
+        }
+      ],
+      "trackedOverflowCount": 0,
+      "trackedOverflow": []
+    },
+    "quiz": {
+      "docScrollWidth": 768,
+      "docClientWidth": 768,
+      "horizontalOverflow": false,
+      "trackedOverflowCount": 0,
+      "trackedOverflow": []
+    }
+  },
+  {
+    "viewport": {
+      "name": "1280x720",
+      "width": 1280,
+      "height": 720
+    },
+    "home": {
+      "viewport": {
+        "vw": 1280,
+        "vh": 720
+      },
+      "doc": {
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "scrollHeight": 720,
+        "clientHeight": 720,
+        "bodyScrollWidth": 1280
+      },
+      "horizontalOverflow": false,
+      "tooSmallTargetCount": 3,
+      "tooSmallTargetSample": [
+        {
+          "w": 42,
+          "h": 44,
+          "text": ""
+        },
+        {
+          "w": 42,
+          "h": 44,
+          "text": ""
+        },
+        {
+          "w": 42,
+          "h": 44,
+          "text": ""
+        }
+      ],
+      "trackedOverflowCount": 0,
+      "trackedOverflow": []
+    },
+    "quiz": {
+      "docScrollWidth": 1280,
+      "docClientWidth": 1280,
+      "horizontalOverflow": false,
+      "trackedOverflowCount": 0,
+      "trackedOverflow": []
+    }
+  },
+  {
+    "viewport": {
+      "name": "1920x1080",
+      "width": 1920,
+      "height": 1080
+    },
+    "home": {
+      "viewport": {
+        "vw": 1920,
+        "vh": 1080
+      },
+      "doc": {
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "scrollHeight": 1080,
+        "clientHeight": 1080,
+        "bodyScrollWidth": 1920
+      },
+      "horizontalOverflow": false,
+      "tooSmallTargetCount": 0,
+      "tooSmallTargetSample": [],
+      "trackedOverflowCount": 0,
+      "trackedOverflow": []
+    },
+    "quiz": {
+      "docScrollWidth": 1920,
+      "docClientWidth": 1920,
+      "horizontalOverflow": false,
+      "trackedOverflowCount": 0,
+      "trackedOverflow": []
+    }
+  },
+  {
+    "viewport": {
+      "name": "3840x2160",
+      "width": 3840,
+      "height": 2160
+    },
+    "home": {
+      "viewport": {
+        "vw": 3840,
+        "vh": 2160
+      },
+      "doc": {
+        "scrollWidth": 3840,
+        "clientWidth": 3840,
+        "scrollHeight": 2160,
+        "clientHeight": 2160,
+        "bodyScrollWidth": 3840
+      },
+      "horizontalOverflow": false,
+      "tooSmallTargetCount": 0,
+      "tooSmallTargetSample": [],
+      "trackedOverflowCount": 0,
+      "trackedOverflow": []
+    },
+    "quiz": {
+      "docScrollWidth": 3840,
+      "docClientWidth": 3840,
+      "horizontalOverflow": false,
+      "trackedOverflowCount": 0,
+      "trackedOverflow": []
+    }
+  }
+]
