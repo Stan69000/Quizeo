@@ -1,6 +1,6 @@
 {
   "identifier": "default",
-  "description": "Default capabilities for Voyage DL",
+  "description": "Default capabilities for Quizeo",
   "windows": ["main"],
   "permissions": [
     "core:default",

@@ -11,6 +11,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { QuizTrack, QuizSettings, QuizMode, QuizTarget, QuizDifficulty, PlaylistSearchResult, AudioFileInfo } from '../types';
 import { Alert } from './Alert';
+import { NetworkQuizScreen } from './network/NetworkQuizScreen';
 
 // ---------------------------------------------------------------------------
 // Web Audio buzz sounds — no external files needed
@@ -128,7 +129,7 @@ function formatChronoTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}.${ms}`;
 }
 
-const HISTORY_KEY = 'voyagedl-quiz-history';
+const HISTORY_KEY = 'quizeo-quiz-history';
 const HISTORY_MAX = 20;
 
 function loadHistory(): QuizHistoryEntry[] {
@@ -383,7 +384,19 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
     countdown: 3,
     jukebox: false,
     keyBindings: ['q', 'p'],
+    serverUrl: 'wss://quiz.stan-bouchet.fr',
   });
+
+  // Delegate entirely to NetworkQuizScreen when network mode is active
+  if (settings.mode === 'network' && phase === 'playing') {
+    return (
+      <NetworkQuizScreen
+        tracks={tracks}
+        settings={settings}
+        onExit={() => setPhase('config')}
+      />
+    );
+  }
 
   // Playing
   const [order, setOrder] = useState<number[]>([]);
@@ -574,7 +587,8 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
     chronoStartRef.current = settings.mode === 'chrono' ? Date.now() : null;
     roundEndedRef.current = false;
     setQcmOptions(buildQcmOptions(tracks, ord[0], settings.target));
-    if (settings.countdown > 0) {
+    // Network mode skips local countdown — the server handles it
+    if (settings.mode !== 'network' && settings.countdown > 0) {
       setCountdownLeft(settings.countdown);
       setPhase('countdown');
     } else {
@@ -1150,8 +1164,38 @@ export function QuizScreen({ onExit, audioFiles = [], onJukeboxPlay }: QuizScree
         <div className="quiz-body">
           <p className="quiz-hint">{tracks.length} morceaux chargés.</p>
 
+          {/* Network mode — featured card at the top */}
+          <button
+            className={`net-mode-card ${settings.mode === 'network' ? 'is-active' : ''}`}
+            onClick={() => setSettings((s) => ({ ...s, mode: 'network' }))}
+          >
+            <div className="net-mode-card-icon">🌐</div>
+            <div className="net-mode-card-body">
+              <strong>Mode en ligne</strong>
+              <span>Chaque joueur rejoint sur son téléphone — comme Kahoot, mais mieux.</span>
+            </div>
+            <div className="net-mode-card-check">{settings.mode === 'network' ? '✓' : ''}</div>
+          </button>
+
+          {settings.mode === 'network' && (
+            <div className="quiz-section">
+              <h3>Serveur de jeu</h3>
+              <input
+                className="quiz-server-url-input"
+                type="text"
+                value={settings.serverUrl}
+                onChange={(e) => setSettings((s) => ({ ...s, serverUrl: e.target.value }))}
+                placeholder="wss://quiz.stan-bouchet.fr"
+                spellCheck={false}
+              />
+              <p className="quiz-hint" style={{ marginTop: 8 }}>
+                Les joueurs ouvrent <strong>quiz.stan-bouchet.fr</strong> sur leur téléphone.
+              </p>
+            </div>
+          )}
+
           <div className="quiz-section">
-            <h3>Mode de jeu</h3>
+            <h3>Mode solo / local</h3>
             <div className="quiz-options">
               {([
                 ['qcm',         'QCM',           '4 propositions'],
@@ -2174,7 +2218,7 @@ function QrShare({
   const [imgOk, setImgOk] = useState(true);
 
   const buildText = () => {
-    const header = '🎵 Voyage DL — Blind Test';
+    const header = '🎵 Quizeo — Blind Test';
     if (mode === 'chrono')
       return `${header}\n⏱ ${formatChronoTime(chronoTotal)}\n${correctCount}/${total} bonnes réponses`;
     if (mode === 'multi')

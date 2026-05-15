@@ -1,5 +1,5 @@
 /**
- * SetupScreen - First-time setup for Voyage DL
+ * SetupScreen - First-time setup for Quizeo
  * Allows user to select download folder
  */
 
@@ -57,7 +57,7 @@ export function SetupScreen({ onSetupComplete }: SetupScreenProps) {
             <rect x="12" y="40" width="56" height="5" rx="2.5" fill="currentColor" opacity="0.15"/>
           </svg>
         </div>
-        <h1 className="setup-welcome-title">Bienvenue sur Voyage DL</h1>
+        <h1 className="setup-welcome-title">Bienvenue sur Quizeo</h1>
         <p className="setup-welcome-subtitle">
           Télécharge tes vidéos YouTube et playlists Deezer en MP3.
           <br />

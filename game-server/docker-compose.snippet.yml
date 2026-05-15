@@ -1,0 +1,18 @@
+# ── Ajouter ce bloc dans docker-compose.prod.yml sur le VPS ──────────────────
+#
+# Caddy : ajouter un bloc dans /etc/caddy/Caddyfile :
+#
+#   quiz.stan-bouchet.fr {
+#       reverse_proxy localhost:3010
+#   }
+#
+# DNS : A quiz.stan-bouchet.fr → 179.237.66.21
+# ─────────────────────────────────────────────────────────────────────────────
+
+  game-server:
+    build: ./game-server
+    ports:
+      - "127.0.0.1:3010:3010"
+    environment:
+      PORT: "3010"
+    restart: unless-stopped

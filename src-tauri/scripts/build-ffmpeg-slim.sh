@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a slim ffmpeg supporting only what Voyage DL needs:
+# Build a slim ffmpeg supporting only what Quizeo needs:
 #   - typical YouTube audio decoders (opus, vorbis, aac, mp3, flac)
 #   - image decoders for album covers (mjpeg, png)
 #   - MP3 encoder via libmp3lame (static)

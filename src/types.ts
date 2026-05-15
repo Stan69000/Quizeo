@@ -1,5 +1,5 @@
 /**
- * Type definitions for Voyage DL
+ * Type definitions for Quizeo
  */
 
 export interface TrackInfo {
@@ -68,7 +68,7 @@ export interface PlaylistSearchResult {
   picture_medium: string;
 }
 
-export type QuizMode = 'qcm' | 'free' | 'multi' | 'chrono' | 'elimination';
+export type QuizMode = 'qcm' | 'free' | 'multi' | 'chrono' | 'elimination' | 'network';
 export type QuizTarget = 'title' | 'artist' | 'both' | 'decade';
 export type QuizDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
 
@@ -85,4 +85,59 @@ export interface QuizSettings {
   jukebox: boolean;
   /** Keyboard buzz keys, one per player (empty string = no key assigned). */
   keyBindings: string[];
+  /** Network mode: WebSocket server URL (e.g. wss://quiz.stan-bouchet.fr). */
+  serverUrl: string;
 }
+
+// ── Network multiplayer types ─────────────────────────────────────────────────
+
+export type NetworkPhase =
+  | 'idle'
+  | 'connecting'
+  | 'lobby'
+  | 'countdown'
+  | 'playing'
+  | 'reveal'
+  | 'scoreboard'
+  | 'final'
+  | 'error';
+
+export interface NetworkPlayer {
+  name: string;
+  score: number;
+  streak: number;
+  rank: number;
+}
+
+export interface ScoreDelta {
+  name: string;
+  delta: number;
+  correct: boolean;
+}
+
+/** Outbound messages from the host (Tauri) to the game server. */
+export type HostOutMessage =
+  | { type: 'start_game'; total_rounds: number }
+  | { type: 'start_round'; options: string[]; correct_index: number; duration_ms: number }
+  | { type: 'countdown_ack' }
+  | { type: 'reveal_answer' }
+  | { type: 'show_scoreboard' }
+  | { type: 'next_round' }
+  | { type: 'end_game' }
+  | { type: 'kick_player'; name: string };
+
+/** Inbound messages from the game server to the host. */
+export type HostInMessage =
+  | { type: 'room_created'; pin: string }
+  | { type: 'player_joined'; name: string; count: number }
+  | { type: 'player_left'; name: string; count: number }
+  | { type: 'player_disconnected'; name: string }
+  | { type: 'game_started'; total_rounds: number }
+  | { type: 'countdown_done' }
+  | { type: 'round_started'; options: string[]; duration_ms: number; round: number; total: number }
+  | { type: 'answer_count'; answered: number; total: number }
+  | { type: 'answer_revealed'; correct_index: number; deltas: ScoreDelta[]; rankings: NetworkPlayer[] }
+  | { type: 'scoreboard'; rankings: NetworkPlayer[] }
+  | { type: 'game_ended'; rankings: NetworkPlayer[] }
+  | { type: 'ready_for_round'; round: number }
+  | { type: 'error'; code: string };

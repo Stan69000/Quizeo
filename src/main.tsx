@@ -1,5 +1,5 @@
 /**
- * Entry point for Voyage DL React application
+ * Entry point for Quizeo React application
  */
 
 import React from 'react';

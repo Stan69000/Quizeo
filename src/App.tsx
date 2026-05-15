@@ -1,5 +1,5 @@
 /**
- * Main App component for Voyage DL
+ * Main App component for Quizeo
  * Manages screen navigation, app state, and download queue
  */
 

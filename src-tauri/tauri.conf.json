@@ -1,18 +1,18 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicekid1/tauri-v2-schema/main/tauri.conf.schema.json",
-  "productName": "Voyage DL",
+  "productName": "Quizeo",
   "version": "1.2.3",
-  "identifier": "com.voyagedl.app",
+  "identifier": "com.quizeo.app",
   "build": {
     "beforeBuildCommand": "npm run build",
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:1422",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
-        "title": "Voyage DL - Music Downloader",
+        "title": "Quizeo",
         "width": 900,
         "height": 700,
         "resizable": true,
@@ -42,7 +42,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "copyright": "2026 Voyage DL",
+    "copyright": "2026 Quizeo",
     "macOS": {
       "signingIdentity": "-"
     }

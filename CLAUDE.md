@@ -10,11 +10,24 @@ Initial inspiration: https://github.com/TannerNelson16/playlistdl (a Python/Flas
 
 ## What the app does
 
+The app has two modules, accessible from a home screen:
+
+### Download module
 1. The user pastes a URL (YouTube video/playlist, or Deezer playlist)
 2. The app parses the URL and fetches the track list
 3. For a playlist, the user picks which songs to download
-4. URLs of the selected songs are shown
-5. Download as MP3 (or M4A) into the chosen folder
+4. Download as MP3 (or M4A) into the chosen folder
+5. A persistent download queue handles multiple jobs; a MiniPlayer lets the user listen to already-downloaded tracks while downloading
+
+### Quiz module (blind test)
+- Loads a Deezer playlist and plays 30-second previews (or streams via yt-dlp when offline)
+- **5 modes**: QCM (multiple choice), free text input, multiplayer (keyboard buzzers), chrono, elimination
+- **3 guess targets**: title / artist / both / decade
+- **4 difficulty levels** + customisable extract duration + pre-round countdown
+- **Jukebox mode**: auto-advance between rounds, plays the full track in the MiniPlayer after each reveal
+- Buzz sounds generated via Web Audio API (no external audio files)
+- Playlist history with star ratings, best scores, and best chrono times
+- Track enrichment: Wikipedia snippet (FR/EN, track > album > artist priority) + MusicBrainz metadata (label, country, year, genres)
 
 ## Tech stack
 
@@ -27,32 +40,48 @@ Initial inspiration: https://github.com/TannerNelson16/playlistdl (a Python/Flas
 
 ```
 src/                    # React + TypeScript frontend
-  App.tsx               # Top-level component, screen routing
+  App.tsx               # Top-level component, screen routing, download queue state
+  types.ts              # Shared TypeScript types
   components/
     SetupScreen.tsx     # First launch: pick the download folder
-    MainScreen.tsx      # Main screen: URL input + analysis
+    HomeScreen.tsx      # Home hub: navigate to Download or Quiz
+    MainScreen.tsx      # Download screen: URL input + analysis
     TrackList.tsx       # Track list with selection
-    DownloadProgress.tsx # Download progress
-    DownloadQueue.tsx   # Download queue
+    DownloadProgress.tsx # Per-job download progress
+    DownloadQueue.tsx   # Multi-job download queue
+    MiniPlayer.tsx      # In-app audio player (downloaded files + jukebox)
+    QuizScreen.tsx      # Full quiz/blind-test module (~2300 lines)
     Settings.tsx        # Settings modal
     Alert.tsx           # Alert component
   hooks/
-    useConfig.ts        # Config management hook
+    useConfig.ts        # Config read/write hook
+    useDownloadedFiles.ts # Scan download folder + fuzzy isDownloaded()
+    useTheme.ts         # Dark/light theme toggle (persisted in localStorage)
 
 src-tauri/              # Rust + Tauri v2 backend
   src/
     main.rs             # Entry point
-    lib.rs              # Module exports
+    lib.rs              # Module exports + Tauri state registration
     commands/
       mod.rs            # Shared types (TrackInfo, DownloadSummary, Config)
       config.rs         # Config read/save
       youtube.rs        # YouTube URL analysis via yt-dlp
-      deezer.rs         # Deezer integration
-      download.rs       # MP3 download with progress
+      deezer.rs         # Deezer playlist fetch + YT search per track
+      download.rs       # MP3/M4A download with progress events
+      analyze.rs        # Cancel/pause state for Deezer YT-search loop
+      cache.rs          # Two-level disk cache (URL→tracks, query→track)
+      enrichment.rs     # Wikipedia + MusicBrainz enrichment; yt-dlp stream URLs
     utils/
       sidecar.rs        # Bundled yt-dlp/ffmpeg binary management
   scripts/
     build-ffmpeg-slim.sh # Custom slim ffmpeg build (macOS only)
+```
+
+### Navigation flow
+
+```
+setup → home → main (download)
+             ↘ quiz
 ```
 
 ## Dev prerequisites
