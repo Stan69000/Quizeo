@@ -42,7 +42,7 @@ async fn wiki_summary(client: &Client, lang: &str, title: &str) -> Option<String
     );
     let resp = client
         .get(&url)
-        .header("User-Agent", "VoyageDL/1.2.3 (tauri)")
+        .header("User-Agent", "Quizeo/1.2.3 (tauri)")
         .send()
         .await
         .ok()?;
@@ -97,7 +97,7 @@ async fn fetch_mb_release(client: &Client, album: &str, artist: &str) -> Option<
     );
     let resp = client
         .get(&url)
-        .header("User-Agent", "VoyageDL/1.2.3 (tauri; contact@voyagedl.app)")
+        .header("User-Agent", "Quizeo/1.2.3 (tauri; contact@quizeo.app)")
         .send()
         .await
         .ok()?;
@@ -134,7 +134,7 @@ async fn fetch_mb_tags(client: &Client, artist: &str) -> Vec<String> {
     );
     let resp = match client
         .get(&url)
-        .header("User-Agent", "VoyageDL/1.2.3 (tauri; contact@voyagedl.app)")
+        .header("User-Agent", "Quizeo/1.2.3 (tauri; contact@quizeo.app)")
         .send()
         .await
     {

@@ -1,4 +1,4 @@
-/// Voyage DL - YouTube and Spotify music downloader Tauri backend
+/// Quizeo - Music quiz and downloader Tauri backend
 ///
 /// This library contains all command handlers and utilities for the Tauri v2 backend.
 

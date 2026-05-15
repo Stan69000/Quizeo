@@ -1,4 +1,4 @@
-/* Voyage DL - Cosmic Mixtape UI */
+/* Quizeo - Cosmic Mixtape UI */
 
 /* ==================== APP SHELL ==================== */
 
@@ -3473,12 +3473,35 @@
   .quiz-title { font-size: 28px; }
   .quiz-body { padding: 36px 60px; }
 
+  /* ── Two-column playing layout on wide screens ── */
+  .quiz-body.quiz-playing {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 60px;
+    row-gap: 24px;
+    align-items: start;
+    justify-items: stretch;
+    padding: 36px 60px;
+  }
+  .quiz-mystery,
+  .quiz-reveal            { grid-column: 1; grid-row: 1 / span 3; margin-bottom: 0; }
+  .quiz-qcm,
+  .quiz-free,
+  .quiz-multi             { grid-column: 2; grid-row: 1; max-width: none; width: 100%; }
+  .quiz-next-sticky       { grid-column: 2; grid-row: 2; padding-top: 0; }
+  .quiz-leaderboard       { grid-column: 2; grid-row: 3; max-width: none; }
+  /* Elements that should span full width */
+  .quiz-verdict-wrap,
+  .quiz-combo-badge,
+  .quiz-wiki-snippet,
+  .quiz-mb-badges         { grid-column: 2; }
+
   /* Mystery disc + album cover */
   .quiz-disc { width: 180px; height: 180px; font-size: 80px; }
   .quiz-cover { width: 220px; height: 220px; }
 
   /* Vinyl ring */
-  .quiz-vinyl { width: 280px; height: 280px; }
+  .quiz-vinyl { width: 300px; height: 300px; }
   .quiz-vinyl-time { font-size: 26px; bottom: -36px; }
 
   /* Reveal text */
@@ -3591,6 +3614,9 @@
   .quiz-header { padding: 24px 48px; }
   .quiz-title { font-size: 34px; }
   .quiz-body { padding: 48px 80px; }
+
+  .quiz-body.quiz-playing { column-gap: 80px; padding: 48px 80px; }
+  .quiz-vinyl { width: 360px; height: 360px; }
 
   .quiz-disc { width: 240px; height: 240px; font-size: 110px; }
   .quiz-cover { width: 280px; height: 280px; }
@@ -5500,3 +5526,423 @@
 .cin-result-score { font-family: var(--font-display); font-size: 56px; color: #6366f1; }
 .cin-result-sub   { font-size: 14px; color: var(--color-text-secondary); }
 .cin-result-btns  { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+
+/* ── Network multiplayer (mode réseau) ───────────────────────────────────── */
+
+@keyframes net-slide-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes net-spin { to { transform: rotate(360deg); } }
+
+/* ── Config : carte mode réseau ─────────────────────────────────────────── */
+
+.net-mode-card {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.2vw, 18px);
+  width: 100%;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: clamp(14px, 1.5vw, 20px) clamp(14px, 1.5vw, 20px);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition-fast), background var(--transition-fast),
+              box-shadow var(--transition-fast);
+  margin-top: var(--spacing-md);
+}
+.net-mode-card:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-very-light);
+}
+.net-mode-card.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-very-light);
+  box-shadow: 0 0 0 1px var(--color-primary), var(--shadow-glow);
+}
+.net-mode-card-icon { font-size: clamp(24px, 2.2vw, 34px); flex-shrink: 0; }
+.net-mode-card-body { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.net-mode-card-body strong {
+  font-size: clamp(15px, 1.2vw, 18px);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+}
+.net-mode-card-body span {
+  font-size: clamp(12px, 0.9vw, 14px);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+.net-mode-card-check {
+  font-size: clamp(16px, 1.4vw, 22px);
+  font-weight: 700;
+  color: var(--color-primary);
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ── Config : champ URL serveur ─────────────────────────────────────────── */
+
+.quiz-server-url-input {
+  width: 100%;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: clamp(9px, 0.9vw, 13px) clamp(12px, 1vw, 16px);
+  font-size: clamp(13px, 0.9vw, 15px);
+  color: var(--color-text-primary);
+  font-family: monospace;
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.quiz-server-url-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-very-light);
+}
+
+/* ── Écrans réseau (lobby / game / final) ───────────────────────────────── */
+/* Chaque écran réseau est enfant direct de .screen.quiz-screen (pas de quiz-body).
+   Ils gèrent leur propre padding et scroll. */
+
+.net-screen {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  padding: clamp(16px, 2vw, 32px) clamp(16px, 3vw, 40px);
+  gap: clamp(12px, 1.4vw, 20px);
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Loading / error */
+.net-loading, .net-error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  text-align: center;
+  padding: clamp(24px, 4vw, 60px) clamp(16px, 3vw, 40px);
+}
+.net-spinner {
+  width: clamp(36px, 3vw, 52px);
+  height: clamp(36px, 3vw, 52px);
+  border: 3px solid var(--color-bg-tertiary);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: net-spin 0.9s linear infinite;
+}
+.net-loading-text { font-size: clamp(14px, 1.1vw, 17px); color: var(--color-text-secondary); }
+.net-error-title  { font-size: clamp(18px, 1.5vw, 22px); font-weight: 700; color: var(--color-error); }
+.net-error-sub    { font-size: clamp(13px, 1vw, 16px); color: var(--color-text-secondary); }
+.net-error-hint   { font-size: clamp(12px, 0.9vw, 14px); color: var(--color-text-secondary); }
+.net-error-hint code {
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+  padding: 2px 7px;
+  font-size: 0.9em;
+}
+
+/* ── Lobby ──────────────────────────────────────────────────────────────── */
+
+.net-lobby { display: flex; flex-direction: column; flex: 1; overflow: hidden; gap: clamp(12px, 1.4vw, 20px); }
+
+.net-lobby-header { display: flex; align-items: center; gap: var(--spacing-sm); }
+
+.net-back-btn {
+  background: none;
+  border: none;
+  font-size: clamp(18px, 1.5vw, 24px);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+  min-height: 0;
+}
+.net-back-btn:hover { color: var(--color-text-primary); }
+
+.net-lobby-title {
+  font-size: clamp(16px, 1.3vw, 20px);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+}
+
+.net-pin-block {
+  text-align: center;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: clamp(16px, 2vw, 28px);
+}
+.net-pin-label {
+  font-size: clamp(11px, 0.8vw, 13px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+.net-pin-value {
+  font-size: clamp(40px, 5vw, 72px);
+  font-weight: 900;
+  letter-spacing: clamp(6px, 1vw, 12px);
+  font-family: var(--font-display);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.1;
+}
+.net-pin-hint { font-size: clamp(12px, 0.9vw, 14px); color: var(--color-text-secondary); line-height: 1.5; }
+.net-pin-hint strong { color: var(--color-text-primary); }
+
+.net-players-header { display: flex; align-items: center; justify-content: space-between; }
+.net-players-title {
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.net-players-count {
+  font-size: clamp(12px, 0.9vw, 14px);
+  font-weight: 700;
+  background: var(--color-primary-very-light);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  padding: 3px 12px;
+}
+
+.net-players-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: var(--spacing-sm); }
+.net-players-empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: clamp(13px, 1vw, 15px);
+  padding: var(--spacing-xl);
+}
+
+.net-player-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: clamp(9px, 0.9vw, 13px) clamp(12px, 1vw, 16px);
+  animation: net-slide-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.net-player-avatar {
+  width: clamp(32px, 2.6vw, 44px);
+  height: clamp(32px, 2.6vw, 44px);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(12px, 0.9vw, 16px);
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.net-player-name { font-size: clamp(14px, 1vw, 16px); font-weight: 600; color: var(--color-text-primary); }
+
+.net-start-btn {
+  width: 100%;
+  padding: clamp(13px, 1.3vw, 18px);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: #fff;
+  font-size: clamp(15px, 1.2vw, 18px);
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: opacity var(--transition-fast), transform 0.1s, box-shadow var(--transition-fast);
+  font-family: var(--font-display);
+  box-shadow: var(--shadow-md);
+}
+.net-start-btn:hover:not(:disabled) { opacity: 0.9; box-shadow: var(--shadow-glow); }
+.net-start-btn:active:not(:disabled) { transform: scale(0.98); }
+.net-start-btn:disabled { opacity: 0.35; cursor: default; box-shadow: none; }
+
+/* ── Game control ───────────────────────────────────────────────────────── */
+
+.net-game { display: flex; flex-direction: column; flex: 1; overflow: hidden; gap: clamp(10px, 1.2vw, 16px); }
+
+.net-game-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.net-round-badge {
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--color-text-secondary);
+}
+.net-answer-count {
+  font-size: clamp(12px, 0.9vw, 14px);
+  font-weight: 600;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 4px clamp(10px, 1vw, 14px);
+  color: var(--color-text-secondary);
+}
+
+/* Leaderboard */
+.net-leaderboard { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: clamp(5px, 0.5vw, 8px); }
+.net-lb-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 0.8vw, 12px);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: clamp(9px, 0.9vw, 13px) clamp(12px, 1vw, 16px);
+  animation: net-slide-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.net-lb-rank { font-size: clamp(16px, 1.4vw, 22px); width: 30px; text-align: center; flex-shrink: 0; }
+.net-lb-name { flex: 1; font-size: clamp(14px, 1vw, 16px); font-weight: 600; color: var(--color-text-primary); }
+.net-lb-delta {
+  font-size: clamp(12px, 0.85vw, 14px);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  padding: 2px clamp(6px, 0.6vw, 10px);
+}
+.net-lb-delta.correct { background: var(--color-success-light); color: var(--color-success); }
+.net-lb-delta.wrong   { background: var(--color-error-light);   color: var(--color-error); }
+.net-lb-score { font-size: clamp(13px, 1vw, 15px); font-weight: 700; color: var(--color-primary); }
+.net-lb-empty { text-align: center; color: var(--color-text-secondary); font-size: clamp(13px, 1vw, 15px); padding: var(--spacing-lg); }
+
+/* Options preview grid */
+.net-options-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(6px, 0.6vw, 10px);
+  flex-shrink: 0;
+}
+.net-option-preview {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: clamp(9px, 0.9vw, 13px) clamp(12px, 1vw, 16px);
+  font-size: clamp(13px, 0.95vw, 15px);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-align: center;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.net-option-preview.correct {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background: var(--color-success-light);
+}
+
+/* Action buttons */
+.net-actions { display: flex; gap: clamp(8px, 0.8vw, 12px); flex-shrink: 0; }
+.net-action-btn {
+  flex: 1;
+  padding: clamp(12px, 1.2vw, 17px);
+  font-size: clamp(14px, 1.1vw, 17px);
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: opacity var(--transition-fast), transform 0.1s, box-shadow var(--transition-fast);
+  font-family: var(--font-display);
+  color: #fff;
+}
+.net-action-btn:hover  { opacity: 0.92; }
+.net-action-btn:active { transform: scale(0.97); opacity: 0.85; }
+
+.net-action-reveal { background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); box-shadow: var(--shadow-md); }
+.net-action-reveal:hover { box-shadow: var(--shadow-glow); }
+.net-action-scores { background: linear-gradient(135deg, var(--color-accent), #0891b2); box-shadow: var(--shadow-md); }
+.net-action-next   { background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); box-shadow: var(--shadow-md); }
+.net-action-end    { background: var(--color-bg-tertiary); color: var(--color-text-secondary); box-shadow: none; }
+
+/* ── Final ──────────────────────────────────────────────────────────────── */
+
+.net-final {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  overflow-y: auto;
+  gap: clamp(14px, 1.6vw, 24px);
+}
+.net-final-title {
+  font-size: clamp(20px, 2vw, 30px);
+  font-weight: 900;
+  font-family: var(--font-display);
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+/* Podium */
+.net-podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(6px, 0.8vw, 12px);
+  width: 100%;
+  max-width: clamp(280px, 40vw, 520px);
+}
+.net-podium-slot { flex: 1; display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.5vw, 8px); }
+.net-podium-avatar {
+  width: clamp(40px, 3.5vw, 60px);
+  height: clamp(40px, 3.5vw, 60px);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(15px, 1.3vw, 22px);
+  font-weight: 800;
+  color: #fff;
+}
+.net-podium-name  { font-size: clamp(11px, 0.85vw, 14px); font-weight: 700; text-align: center; color: var(--color-text-primary); word-break: break-all; }
+.net-podium-score { font-size: clamp(11px, 0.8vw, 13px); color: var(--color-primary); font-weight: 700; }
+.net-podium-bar {
+  width: 100%;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(18px, 1.6vw, 26px);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+}
+.net-podium-second .net-podium-bar { height: clamp(55px, 6vw, 90px); }
+.net-podium-first  .net-podium-bar {
+  height: clamp(85px, 10vw, 140px);
+  background: linear-gradient(180deg, var(--color-primary-very-light), var(--color-bg-secondary));
+  border-color: var(--color-primary);
+}
+.net-podium-third .net-podium-bar { height: clamp(40px, 4.5vw, 70px); }
+
+.net-final-list {
+  width: 100%;
+  max-width: clamp(300px, 50vw, 560px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(5px, 0.5vw, 8px);
+}
+
+/* ── Responsive overrides ───────────────────────────────────────────────── */
+
+@media (min-width: 1280px) {
+  .net-screen { padding: 32px 60px; }
+  .net-pin-value { letter-spacing: 14px; }
+  .net-options-preview { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 1600px) {
+  .net-screen { padding: 40px 80px; }
+}
+
+@media (min-width: 1920px) {
+  .net-screen { padding: 48px 96px; }
+  .net-lb-row { padding: 14px 20px; }
+  .net-player-row { padding: 13px 20px; }
+}
