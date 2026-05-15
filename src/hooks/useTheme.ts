@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 type Theme = 'dark' | 'light';
-const STORAGE_KEY = 'voyagedl-theme';
+const STORAGE_KEY = 'quizeo-theme';
 
 function applyTheme(theme: Theme) {
   if (theme === 'light') {

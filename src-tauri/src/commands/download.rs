@@ -182,7 +182,7 @@ pub async fn download_tracks(
         // YouTube filenames diverge often (e.g. remaster 2015 vs 1998), so we have
         // yt-dlp emit the exact path instead of guessing from title sanitization.
         let filepath_marker = std::env::temp_dir()
-            .join(format!("voyagedl_{}_{}.path", std::process::id(), track_id));
+            .join(format!("quizeo_{}_{}.path", std::process::id(), track_id));
         let _ = std::fs::remove_file(&filepath_marker);
         args.push("--print-to-file".to_string());
         args.push("after_move:filepath".to_string());
@@ -383,7 +383,7 @@ pub fn scan_downloaded_files(dir: String) -> Result<Vec<AudioFileInfo>, String> 
 }
 
 /// Writes a `#EXTM3U` playlist containing every .mp3/.m4a file in `dir`.
-/// The file is saved as `Voyage DL.m3u` inside `dir`.
+/// The file is saved as `Quizeo.m3u` inside `dir`.
 /// Returns the absolute path of the created file.
 #[command]
 pub fn export_m3u(dir: String) -> Result<String, String> {
@@ -391,7 +391,7 @@ pub fn export_m3u(dir: String) -> Result<String, String> {
     if files.is_empty() {
         return Err("Aucun fichier audio dans ce dossier.".to_string());
     }
-    let m3u_path = Path::new(&dir).join("Voyage DL.m3u");
+    let m3u_path = Path::new(&dir).join("Quizeo.m3u");
     let mut content = String::from("#EXTM3U\n");
     for f in &files {
         content.push_str(&f.path);

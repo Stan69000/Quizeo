@@ -1,10 +1,10 @@
 {
-  "name": "voyage-dl",
+  "name": "quizeo",
   "private": true,
   "version": "1.2.3",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 1422",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "tauri": "tauri"
