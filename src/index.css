@@ -198,7 +198,6 @@ textarea:focus:not(:focus-visible) {
    so desktop laptops keep their current density. */
 
 /* App container cap so 4K TVs don't render a tiny island or a flat band */
-.app-container,
 .main-screen,
 .home-screen {
   max-width: 1600px;
