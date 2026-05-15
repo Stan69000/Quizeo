@@ -39,6 +39,10 @@ interface CinemaScreenProps {
 const ROUND_DURATION = 20; // seconds to guess
 const TOTAL_ROUNDS   = 8;
 
+function hasTauriInvoke() {
+  return typeof window !== 'undefined' && typeof (window as any).__TAURI_INTERNALS__?.invoke === 'function';
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function normalise(s: string) {
@@ -84,7 +88,7 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
   // Quiz state
   const [queue, setQueue]             = useState<CinemaItem[]>([]);
   const [currentIdx, setCurrentIdx]   = useState(0);
-  const [videoId, setVideoId]         = useState<string | null>(null);
+  const [videoId, setVideoId]         = useState<string | null>(null); // "abc123" or "search:<query>"
   const [score, setScore]             = useState(0);
   const [streak, setStreak]           = useState(0);
   const [newRecord, setNewRecord]     = useState(false);
@@ -105,6 +109,7 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
 
   // ── Fetch and cache a video ID for an item ────────────────────────────────
   const prefetchItem = useCallback((item: CinemaItem) => {
+    if (!hasTauriInvoke()) return;
     if (preloadCache.current[item.searchQuery]) return;
     invoke<string>('get_youtube_video_id', { query: item.searchQuery })
       .then((id) => { preloadCache.current[item.searchQuery] = id; })
@@ -126,10 +131,15 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
     setCorrect(null);
 
     try {
-      const cached = preloadCache.current[item.searchQuery];
-      const id = cached ?? await invoke<string>('get_youtube_video_id', { query: item.searchQuery });
-      delete preloadCache.current[item.searchQuery];
-      setVideoId(id);
+      if (!hasTauriInvoke()) {
+        // Browser/dev fallback: embed YouTube search directly when native invoke is unavailable.
+        setVideoId(`search:${item.searchQuery}`);
+      } else {
+        const cached = preloadCache.current[item.searchQuery];
+        const id = cached ?? await invoke<string>('get_youtube_video_id', { query: item.searchQuery });
+        delete preloadCache.current[item.searchQuery];
+        setVideoId(id);
+      }
       setQcmOptions(buildQcmOptions(item, pool));
       setTimer(ROUND_DURATION);
       setPhase('playing');
@@ -353,6 +363,9 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
   const isRevealed = phase === 'reveal';
   const timerPct   = timer / ROUND_DURATION;
   const isUrgent   = timer <= 5 && !isRevealed;
+  const embedSrc = videoId.startsWith('search:')
+    ? `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(videoId.slice('search:'.length))}&autoplay=1&rel=0&modestbranding=1&enablejsapi=1${isRevealed ? '&controls=1' : '&controls=0'}`
+    : `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1${isRevealed ? '&controls=1' : '&controls=0'}`;
 
   // Playing + Reveal
   return (
@@ -375,7 +388,7 @@ export function CinemaScreen({ onExit, autoStart = false }: CinemaScreenProps) {
         <div className="cin-video-wrap">
           <iframe
             key={videoId}
-            src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1${isRevealed ? '&controls=1' : '&controls=0'}`}
+            src={embedSrc}
             title={isRevealed ? currentItem.title : 'Bande-annonce mystère'}
             allow="autoplay; encrypted-media"
             allowFullScreen
