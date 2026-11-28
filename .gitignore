@@ -32,3 +32,6 @@ src/**/*.d.ts
 src/**/*.d.ts.map
 src/**/*.js.map
 tsconfig.tsbuildinfo
+
+# Claude Code worktrees are local scratch checkouts, never part of the repo.
+.claude/worktrees/
